@@ -1,0 +1,30 @@
+Package: Analyze4CPackage
+Title: Analysis Of 4C Data
+Version: 0.0.0.9000
+Authors@R: person("Akiva", "Brauner", email = "akivab2@gmail.com", role = c("aut", "cre"))
+Imports: 
+    ggplot2,
+	scatterplot3d,
+	compute.es,
+	psych
+suggests:
+	sratoolkit,
+	bowtie,
+	tophat,
+	cufflinks,
+	perl
+Description: The package recieves from user fastq files of sequenced reads from
+    4C experiments, the data is then analyzed and transformed into raw data
+	files, p-score files, and more... The data could then be compared to
+	RNA-seq data in order to determine any relationship between it and the
+	4C data. Several plots, and calculations regarding different statistics
+	about the data are created. The package organizes the data that is input
+	and created, and logs are recorded for later review ability to follow the
+	anaylsis processes. The user works through menus and having to answer
+	several questions in order to procceed with each step, starting with a
+	main menu. The user is able to stop work at any point and continue from the same step left off.
+Depends: R (>= 3.3.2)
+License: What license is it under?
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1.9000
