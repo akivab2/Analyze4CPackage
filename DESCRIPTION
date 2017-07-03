@@ -6,7 +6,8 @@ Imports:
     ggplot2,
 	scatterplot3d,
 	compute.es,
-	psych
+	psych,
+	VennDiagram
 suggests:
 	sratoolkit,
 	bowtie,

@@ -407,7 +407,12 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 	system(paste("bedtools intersect -a ~/Analyze4C/temp/FPKM2_afterCO.bed -b ~/Analyze4C/contact_bands/",conts_filename," -wo > ~/Analyze4C/temp/expressionComparison2.bed",sep=""))
 	expressionComparison1 <- read.table("~/Analyze4C/temp/expressionComparison1.bed")	
 	expressionComparison2 <- read.table("~/Analyze4C/temp/expressionComparison2.bed")
-		
+
+	#getting the date and time in order to distinguish between file names of plots
+	DandT1 <- toString(Sys.time())
+	DandT2 <- gsub(" ","_",DandT1)
+	DandT2 <- gsub(":","",DandT2)
+	
 	#compare the numbers of both - ask user if to compare all, trans, cis , or individual chromosomes
 	repeat
 	{
@@ -557,10 +562,6 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 				ans8 <- readline(prompt=cat("\n\nsave the plot?\ny/n\n"))
 				if(ans8 == "y")
 				{
-					#getting the date and time in order to distinguish between file names of plots
-					DandT1 <- toString(Sys.time())
-					DandT2 <- gsub(" ","_",DandT1)
-					DandT2 <- gsub(":","",DandT2)
 					nm <- paste("ContactsBP_FPKMintersectedContacts_",DandT2,".png",sep="")
 					wd <- as.numeric(readline(prompt=cat("\nenter the width size of the plot:\n\n")))
 					ht <- as.numeric(readline(prompt=cat("\nenter the height size of the plot:\n\n")))
@@ -685,10 +686,6 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 				ans5 <- readline(prompt=cat("\n\nsave the plot?\ny/n\n"))
 				if(ans5 == "y")
 				{
-					#getting the date and time in order to distinguish between file names of plots
-					DandT1 <- toString(Sys.time())
-					DandT2 <- gsub(" ","_",DandT1)
-					DandT2 <- gsub(":","",DandT2)
 					nm <- paste("fpkmBP_FPKMintersectedContacts_",DandT2,".png",sep="")
 					wd <- as.numeric(readline(prompt=cat("\nenter the width size of the plot:\n\n")))
 					ht <- as.numeric(readline(prompt=cat("\nenter the height size of the plot:\n\n")))
@@ -813,10 +810,6 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 				ans6 <- readline(prompt=cat("\n\nsave the plot?\ny/n\n"))
 				if(ans6 == "y")
 				{
-					#getting the date and time in order to distinguish between file names of plots
-					DandT1 <- toString(Sys.time())
-					DandT2 <- gsub(" ","_",DandT1)
-					DandT2 <- gsub(":","",DandT2)
 					nm <- paste("fpkm_FPKMintersectedContacts_",DandT2,".png",sep="")
 					wd <- as.numeric(readline(prompt=cat("\nenter the width size of the plot:\n\n")))
 					ht <- as.numeric(readline(prompt=cat("\nenter the height size of the plot:\n\n")))
@@ -863,7 +856,113 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 					system("rm expressionVScontacts_plots.txt")
 					write.table(expressionVScontacts_plots,"expressionVScontacts_plots.txt",sep="\t",row.names = FALSE,col.names = TRUE,quote=FALSE)			
 				}
-			}	
+			}
+			
+			#venn diagrams
+			if(readline(prompt=cat("\nwould you like to create venn diagrams?\ny/n\n\n")) == "y")
+			{
+				#creating the venn data frame for 0 percent
+				venn_DF <- data.frame(rep(1,nrow(conts)),matrix(0,nrow(conts),2))##!
+
+				cat("\nvenn diagram parameters:\n\n")
+				venn_ans1 <- readline(prompt=cat("\nwould you like to consider overlaps to be only those that intersect more than 1 bp?\ny/n\n\n"))
+				if(venn_ans1 == "y")
+				{
+					ovlp_cov <- as.numeric(readline(prompt=cat("\nenter the minimum overlap coverage that will be considered an intersection? (between 0 and 1)\n\n")))
+					
+					venn_ans2 <- readline(prompt=cat("\nyou have chosen to accept an intersection only if there is at least",ovlp_cov,"overlap.\nwould you consider accepting an intersection if there is more than a certain amount of reads that intersect (e.g. if you there are more than an x amount of reads intersected, even though each one doesn't overlap more than",ovlp_cov,", altogether they are sufficient enough to be considered as an overlap)\ny/n\n\n"))
+					if(venn_ans2 == "y")
+					{
+						ovlp_num <- as.integer(readline(prompt=cat("\nhow many reads (minimum) intersected will be considered as an overlap?\n\n")))
+					}
+				}
+				
+				#filling in the data for the venn diagrams
+				if(venn_ans1 == "y")
+				{
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM1_afterCO.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_A1.bed",sep=""))
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM2_afterCO.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_A2.bed",sep=""))
+					venn_A1 <- read.table(paste("~/Analyze4C/temp/venn_A1.bed",sep=""))
+					venn_A2 <- read.table(paste("~/Analyze4C/temp/venn_A2.bed",sep=""))
+					system("rm ~/Analyze4C/temp/venn_A1.bed")
+					system("rm ~/Analyze4C/temp/venn_A2.bed")
+					if(venn_ans2 == "y")
+					{
+						system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM1_afterCO.bed -c > ~/Analyze4C/temp/venn_B1.bed",sep=""))
+						system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM2_afterCO.bed -c > ~/Analyze4C/temp/venn_B2.bed",sep=""))
+						venn_B1 <- read.table(paste("~/Analyze4C/temp/venn_B1.bed",sep=""))
+						venn_B2 <- read.table(paste("~/Analyze4C/temp/venn_B2.bed",sep=""))
+						#removing files
+						system("rm ~/Analyze4C/temp/venn_B1.bed")
+						system("rm ~/Analyze4C/temp/venn_B2.bed")
+						#if the number in the 1st is 0 but the number in the 2nd is more than ovlp_num then we will consider it to be 1
+						venn_A1[venn_B1[,4]>=ovlp_num,4] <- 1
+						venn_A2[venn_B2[,4]>=ovlp_num,4] <- 1
+					}
+					#add the correct number to each column
+					venn_DF[venn_A1[,4]>=1,2] <- 1
+					venn_DF[venn_A2[,4]>=1,3] <- 1
+				}
+				else
+				{
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM1_afterCO.bed -c > ~/Analyze4C/temp/venn1.bed",sep=""))
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM2_afterCO.bed -c > ~/Analyze4C/temp/venn2.bed",sep=""))
+					venn1 <- read.table(paste("~/Analyze4C/temp/venn1.bed",sep=""))
+					venn2 <- read.table(paste("~/Analyze4C/temp/venn2.bed",sep=""))
+					system("rm ~/Analyze4C/temp/venn1.bed")
+					system("rm ~/Analyze4C/temp/venn2.bed")
+					#add the correct number to each column
+					venn_DF[venn1[,4]>=1,2] <- 1
+					venn_DF[venn2[,4]>=1,3] <- 1				
+				}
+				
+				# create venn diagram using the data frame venn_DF
+				venn_flag <- 0 #if venn_flag is 1 then we save a diagram and it should be recorded in 'expressionVScontacts_sumOFintersections_plots'
+				vennName <- paste("venn_psContsVS2FPKMs_",DandT2,".jpg",sep="")
+				venn_flag <- venn_creator(venn_DF,2,1,vennName)			
+
+				#recording the data into 'expressionVScontacts_sumOFintersections_plots.txt'
+				if(venn_flag == 1)
+				{					
+					#getting parameters for expressionVScontacts_plots.txt:
+					struct <- "two expression files intersected with a contact bands file - Venn Diagram"					
+					bpORfpkm <- NA
+					percentageOf <- NA
+					if(ans4 == 1)
+					{
+						FPKM_CO_appliedTo <- "whole genome"
+					}
+					else if(ans4 == 2)
+					{
+						FPKM_CO_appliedTo <- "trans"
+					}
+					else if(ans4 == 3)
+					{
+						FPKM_CO_appliedTo <- "each chromosome separately"
+					}
+
+					Intersection_chromosomes <- "whole genome"
+					
+					ans7 <- readline(prompt=cat("\nwould you like to include any additional notes about the plot (this all will be written in the expressionVScontacts_plots.txt file)?\ny/n\n"))
+					if(ans7 == "y")
+					{
+						notes <- readline(prompt=cat("\nenter the notes:\n\n"))
+					}
+					else
+					{
+						notes <- NA
+					}
+					
+					#saving the parameters and details to expressionVScontacts_plots.txt
+					expressionVScontacts_plots[nrow(expressionVScontacts_plots)+1,] <- c(nm,struct,conts_filename,FPKM_filename1,FPKM_filename2,bpORfpkm,percentageOf,DandT1,CO_type,FPKM_cutoff,FPKM_CO_appliedTo,Intersection_chromosomes,notes)
+					#sorting the list of experiments by bait alphabetically (and sorting the row indices)
+					expressionVScontacts_plots <- expressionVScontacts_plots[order(expressionVScontacts_plots$Plotfile_name),]
+					rownames(expressionVScontacts_plots) <- seq(length=nrow(expressionVScontacts_plots))
+					#adding the new data to the file (by erasing the old one and creating a new one)
+					system("rm expressionVScontacts_plots.txt")
+					write.table(expressionVScontacts_plots,"expressionVScontacts_plots.txt",sep="\t",row.names = FALSE,col.names = TRUE,quote=FALSE)			
+				}	
+			}					
 		}
 		else if(ans3 == 2) #trans
 		{
@@ -1016,10 +1115,6 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 				ans8 <- readline(prompt=cat("\n\nsave the plot?\ny/n\n"))
 				if(ans8 == "y")
 				{
-					#getting the date and time in order to distinguish between file names of plots
-					DandT1 <- toString(Sys.time())
-					DandT2 <- gsub(" ","_",DandT1)
-					DandT2 <- gsub(":","",DandT2)
 					nm <- paste("ContactsBP_FPKMintersectedContacts_",DandT2,".png",sep="")
 					wd <- as.numeric(readline(prompt=cat("\nenter the width size of the plot:\n\n")))
 					ht <- as.numeric(readline(prompt=cat("\nenter the height size of the plot:\n\n")))
@@ -1144,10 +1239,6 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 				ans5 <- readline(prompt=cat("\n\nsave the plot?\ny/n\n"))
 				if(ans5 == "y")
 				{
-					#getting the date and time in order to distinguish between file names of plots
-					DandT1 <- toString(Sys.time())
-					DandT2 <- gsub(" ","_",DandT1)
-					DandT2 <- gsub(":","",DandT2)
 					nm <- paste("fpkmBP_FPKMintersectedContacts_",DandT2,".png",sep="")
 					wd <- as.numeric(readline(prompt=cat("\nenter the width size of the plot:\n\n")))
 					ht <- as.numeric(readline(prompt=cat("\nenter the height size of the plot:\n\n")))
@@ -1272,10 +1363,6 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 				ans6 <- readline(prompt=cat("\n\nsave the plot?\ny/n\n"))
 				if(ans6 == "y")
 				{
-					#getting the date and time in order to distinguish between file names of plots
-					DandT1 <- toString(Sys.time())
-					DandT2 <- gsub(" ","_",DandT1)
-					DandT2 <- gsub(":","",DandT2)
 					nm <- paste("fpkm_FPKMintersectedContacts_",DandT2,".png",sep="")
 					wd <- as.numeric(readline(prompt=cat("\nenter the width size of the plot:\n\n")))
 					ht <- as.numeric(readline(prompt=cat("\nenter the height size of the plot:\n\n")))
@@ -1322,7 +1409,113 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 					system("rm expressionVScontacts_plots.txt")
 					write.table(expressionVScontacts_plots,"expressionVScontacts_plots.txt",sep="\t",row.names = FALSE,col.names = TRUE,quote=FALSE)			
 				}
-			}	
+			}
+
+			#venn diagrams
+			if(readline(prompt=cat("\nwould you like to create venn diagrams?\ny/n\n\n")) == "y")
+			{
+				#creating the venn data frame for 0 percent
+				venn_DF <- data.frame(rep(1,nrow(conts)),matrix(0,nrow(conts),2))##!
+
+				cat("\nvenn diagram parameters:\n\n")
+				venn_ans1 <- readline(prompt=cat("\nwould you like to consider overlaps to be only those that intersect more than 1 bp?\ny/n\n\n"))
+				if(venn_ans1 == "y")
+				{
+					ovlp_cov <- as.numeric(readline(prompt=cat("\nenter the minimum overlap coverage that will be considered an intersection? (between 0 and 1)\n\n")))
+					
+					venn_ans2 <- readline(prompt=cat("\nyou have chosen to accept an intersection only if there is at least",ovlp_cov,"overlap.\nwould you consider accepting an intersection if there is more than a certain amount of reads that intersect (e.g. if you there are more than an x amount of reads intersected, even though each one doesn't overlap more than",ovlp_cov,", altogether they are sufficient enough to be considered as an overlap)\ny/n\n\n"))
+					if(venn_ans2 == "y")
+					{
+						ovlp_num <- as.integer(readline(prompt=cat("\nhow many reads (minimum) intersected will be considered as an overlap?\n\n")))
+					}
+				}
+				
+				#filling in the data for the venn diagrams
+				if(venn_ans1 == "y")
+				{
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM1_afterCO.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_A1.bed",sep=""))
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM2_afterCO.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_A2.bed",sep=""))
+					venn_A1 <- read.table(paste("~/Analyze4C/temp/venn_A1.bed",sep=""))
+					venn_A2 <- read.table(paste("~/Analyze4C/temp/venn_A2.bed",sep=""))
+					system("rm ~/Analyze4C/temp/venn_A1.bed")
+					system("rm ~/Analyze4C/temp/venn_A2.bed")
+					if(venn_ans2 == "y")
+					{
+						system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM1_afterCO.bed -c > ~/Analyze4C/temp/venn_B1.bed",sep=""))
+						system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM2_afterCO.bed -c > ~/Analyze4C/temp/venn_B2.bed",sep=""))
+						venn_B1 <- read.table(paste("~/Analyze4C/temp/venn_B1.bed",sep=""))
+						venn_B2 <- read.table(paste("~/Analyze4C/temp/venn_B2.bed",sep=""))
+						#removing files
+						system("rm ~/Analyze4C/temp/venn_B1.bed")
+						system("rm ~/Analyze4C/temp/venn_B2.bed")
+						#if the number in the 1st is 0 but the number in the 2nd is more than ovlp_num then we will consider it to be 1
+						venn_A1[venn_B1[,4]>=ovlp_num,4] <- 1
+						venn_A2[venn_B2[,4]>=ovlp_num,4] <- 1
+					}
+					#add the correct number to each column
+					venn_DF[venn_A1[,4]>=1 & venn_A1[,1]!=cis,2] <- 1
+					venn_DF[venn_A2[,4]>=1 & venn_A2[,1]!=cis,3] <- 1
+				}
+				else
+				{
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM1_afterCO.bed -c > ~/Analyze4C/temp/venn1.bed",sep=""))
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM2_afterCO.bed -c > ~/Analyze4C/temp/venn2.bed",sep=""))
+					venn1 <- read.table(paste("~/Analyze4C/temp/venn1.bed",sep=""))
+					venn2 <- read.table(paste("~/Analyze4C/temp/venn2.bed",sep=""))
+					system("rm ~/Analyze4C/temp/venn1.bed")
+					system("rm ~/Analyze4C/temp/venn2.bed")
+					#add the correct number to each column
+					venn_DF[venn1[,4]>=1 & venn1[,1]!=cis,2] <- 1
+					venn_DF[venn2[,4]>=1 & venn2[,1]!=cis,3] <- 1				
+				}
+				
+				# create venn diagram using the data frame venn_DF
+				venn_flag <- 0 #if venn_flag is 1 then we save a diagram and it should be recorded in 'expressionVScontacts_sumOFintersections_plots'
+				vennName <- paste("venn_psContsVS2FPKMs_",DandT2,".jpg",sep="")
+				venn_flag <- venn_creator(venn_DF,2,1,vennName)			
+
+				#recording the data into 'expressionVScontacts_sumOFintersections_plots.txt'
+				if(venn_flag == 1)
+				{					
+					#getting parameters for expressionVScontacts_plots.txt:
+					struct <- "two expression files intersected with a contact bands file - Venn Diagram"					
+					bpORfpkm <- NA
+					percentageOf <- NA
+					if(ans4 == 1)
+					{
+						FPKM_CO_appliedTo <- "whole genome"
+					}
+					else if(ans4 == 2)
+					{
+						FPKM_CO_appliedTo <- "trans"
+					}
+					else if(ans4 == 3)
+					{
+						FPKM_CO_appliedTo <- "each chromosome separately"
+					}
+
+					Intersection_chromosomes <- "trans"
+					
+					ans7 <- readline(prompt=cat("\nwould you like to include any additional notes about the plot (this all will be written in the expressionVScontacts_plots.txt file)?\ny/n\n"))
+					if(ans7 == "y")
+					{
+						notes <- readline(prompt=cat("\nenter the notes:\n\n"))
+					}
+					else
+					{
+						notes <- NA
+					}
+					
+					#saving the parameters and details to expressionVScontacts_plots.txt
+					expressionVScontacts_plots[nrow(expressionVScontacts_plots)+1,] <- c(nm,struct,conts_filename,FPKM_filename1,FPKM_filename2,bpORfpkm,percentageOf,DandT1,CO_type,FPKM_cutoff,FPKM_CO_appliedTo,Intersection_chromosomes,notes)
+					#sorting the list of experiments by bait alphabetically (and sorting the row indices)
+					expressionVScontacts_plots <- expressionVScontacts_plots[order(expressionVScontacts_plots$Plotfile_name),]
+					rownames(expressionVScontacts_plots) <- seq(length=nrow(expressionVScontacts_plots))
+					#adding the new data to the file (by erasing the old one and creating a new one)
+					system("rm expressionVScontacts_plots.txt")
+					write.table(expressionVScontacts_plots,"expressionVScontacts_plots.txt",sep="\t",row.names = FALSE,col.names = TRUE,quote=FALSE)			
+				}	
+			}							
 		}	
 		else if(ans3 == 3) #chromosomes separately
 		{
@@ -1585,10 +1778,6 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 				ans8 <- readline(prompt=cat("\n\nsave the plot?\ny/n\n"))
 				if(ans8 == "y")
 				{
-					#getting the date and time in order to distinguish between file names of plots
-					DandT1 <- toString(Sys.time())
-					DandT2 <- gsub(" ","_",DandT1)
-					DandT2 <- gsub(":","",DandT2)
 					nm <- paste("contactsBP_FPKMintersectedContacts_",DandT2,".png",sep="")
 					wd <- as.numeric(readline(prompt=cat("\nenter the width size of the plot:\n\n")))
 					ht <- as.numeric(readline(prompt=cat("\nenter the height size of the plot:\n\n")))
@@ -1706,10 +1895,6 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 				ans5 <- readline(prompt=cat("\n\nsave the plot?\ny/n\n"))
 				if(ans5 == "y")
 				{
-					#getting the date and time in order to distinguish between file names of plots
-					DandT1 <- toString(Sys.time())
-					DandT2 <- gsub(" ","_",DandT1)
-					DandT2 <- gsub(":","",DandT2)
 					nm <- paste("fpkmBP_FPKMintersectedContacts_",DandT2,".png",sep="")
 					wd <- as.numeric(readline(prompt=cat("\nenter the width size of the plot:\n\n")))
 					ht <- as.numeric(readline(prompt=cat("\nenter the height size of the plot:\n\n")))
@@ -1828,9 +2013,6 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 				if(ans6 == "y")
 				{
 					#getting the date and time in order to distinguish between file names of plots
-					DandT1 <- toString(Sys.time())
-					DandT2 <- gsub(" ","_",DandT1)
-					DandT2 <- gsub(":","",DandT2)
 					nm <- paste("fpkm_FPKMintersectedContacts_",DandT2,".png",sep="")
 					wd <- as.numeric(readline(prompt=cat("\nenter the width size of the plot:\n\n")))
 					ht <- as.numeric(readline(prompt=cat("\nenter the height size of the plot:\n\n")))
@@ -1877,7 +2059,121 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 					system("rm expressionVScontacts_plots.txt")
 					write.table(expressionVScontacts_plots,"expressionVScontacts_plots.txt",sep="\t",row.names = FALSE,col.names = TRUE,quote=FALSE)			
 				}
-			}	
+			}
+
+			#venn diagrams
+			if(readline(prompt=cat("\nwould you like to create venn diagrams?\ny/n\n\n")) == "y")
+			{
+				#creating the venn data frame for 0 percent
+				venn_DF <- data.frame(rep(1,nrow(conts)),matrix(0,nrow(conts),2))##!
+
+				cat("\nvenn diagram parameters:\n\n")
+				venn_ans1 <- readline(prompt=cat("\nwould you like to consider overlaps to be only those that intersect more than 1 bp?\ny/n\n\n"))
+				if(venn_ans1 == "y")
+				{
+					ovlp_cov <- as.numeric(readline(prompt=cat("\nenter the minimum overlap coverage that will be considered an intersection? (between 0 and 1)\n\n")))
+					
+					venn_ans2 <- readline(prompt=cat("\nyou have chosen to accept an intersection only if there is at least",ovlp_cov,"overlap.\nwould you consider accepting an intersection if there is more than a certain amount of reads that intersect (e.g. if you there are more than an x amount of reads intersected, even though each one doesn't overlap more than",ovlp_cov,", altogether they are sufficient enough to be considered as an overlap)\ny/n\n\n"))
+					if(venn_ans2 == "y")
+					{
+						ovlp_num <- as.integer(readline(prompt=cat("\nhow many reads (minimum) intersected will be considered as an overlap?\n\n")))
+					}
+				}
+				
+				venn_flag <- 0 #if venn_flag is 1 then we save a diagram and it should be recorded in 'expressionVScontacts_sumOFintersections_plots'
+				#filling in the data for the venn diagrams
+				if(venn_ans1 == "y")
+				{
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM1_afterCO.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_A1.bed",sep=""))
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM2_afterCO.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_A2.bed",sep=""))
+					venn_A1 <- read.table(paste("~/Analyze4C/temp/venn_A1.bed",sep=""))
+					venn_A2 <- read.table(paste("~/Analyze4C/temp/venn_A2.bed",sep=""))
+					system("rm ~/Analyze4C/temp/venn_A1.bed")
+					system("rm ~/Analyze4C/temp/venn_A2.bed")
+					if(venn_ans2 == "y")
+					{
+						system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM1_afterCO.bed -c > ~/Analyze4C/temp/venn_B1.bed",sep=""))
+						system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM2_afterCO.bed -c > ~/Analyze4C/temp/venn_B2.bed",sep=""))
+						venn_B1 <- read.table(paste("~/Analyze4C/temp/venn_B1.bed",sep=""))
+						venn_B2 <- read.table(paste("~/Analyze4C/temp/venn_B2.bed",sep=""))
+						#removing files
+						system("rm ~/Analyze4C/temp/venn_B1.bed")
+						system("rm ~/Analyze4C/temp/venn_B2.bed")
+						#if the number in the 1st is 0 but the number in the 2nd is more than ovlp_num then we will consider it to be 1
+						venn_A1[venn_B1[,4]>=ovlp_num,4] <- 1
+						venn_A2[venn_B2[,4]>=ovlp_num,4] <- 1
+					}
+					#add the correct number to each column and create venn diagram using the data frame venn_DF
+					for(w in 1:numOFchroms)
+					{
+						cat("\nchromosome ",w,":\n\n",sep="")
+						venn_DF[venn_A1[,4]>=1 & venn_A1[,1]==w,2] <- 1
+						venn_DF[venn_A2[,4]>=1 & venn_A2[,1]==w,3] <- 1
+						vennName <- paste("venn_psContsVS2FPKMs_chr",w,"_",DandT2,".jpg",sep="")
+						venn_flag <- venn_creator(venn_DF,2,1,vennName)						
+					}	
+				}
+				else
+				{
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM1_afterCO.bed -c > ~/Analyze4C/temp/venn1.bed",sep=""))
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM2_afterCO.bed -c > ~/Analyze4C/temp/venn2.bed",sep=""))
+					venn1 <- read.table(paste("~/Analyze4C/temp/venn1.bed",sep=""))
+					venn2 <- read.table(paste("~/Analyze4C/temp/venn2.bed",sep=""))
+					system("rm ~/Analyze4C/temp/venn1.bed")
+					system("rm ~/Analyze4C/temp/venn2.bed")
+					#add the correct number to each column and create venn diagram using the data frame venn_DF
+					for(w in 1:numOFchroms)
+					{
+						cat("\nchromosome ",w,":\n\n",sep="")
+						venn_DF[venn1[,4]>=1 & venn1[,1]==w,2] <- 1
+						venn_DF[venn2[,4]>=1 & venn2[,1]==w,3] <- 1
+						vennName <- paste("venn_psContsVS2FPKMs_chr",w,"_",DandT2,".jpg",sep="")
+						venn_flag <- venn_creator(venn_DF,2,1,vennName)	
+					}	
+				}
+								
+				#recording the data into 'expressionVScontacts_sumOFintersections_plots.txt'
+				if(venn_flag == 1)
+				{					
+					#getting parameters for expressionVScontacts_plots.txt:
+					struct <- "two expression files intersected with a contact bands file - Venn Diagram"					
+					bpORfpkm <- NA
+					percentageOf <- NA
+					if(ans4 == 1)
+					{
+						FPKM_CO_appliedTo <- "whole genome"
+					}
+					else if(ans4 == 2)
+					{
+						FPKM_CO_appliedTo <- "trans"
+					}
+					else if(ans4 == 3)
+					{
+						FPKM_CO_appliedTo <- "each chromosome separately"
+					}
+
+					Intersection_chromosomes <- "each chromosome separately"
+					
+					ans7 <- readline(prompt=cat("\nwould you like to include any additional notes about the plot (this all will be written in the expressionVScontacts_plots.txt file)?\ny/n\n"))
+					if(ans7 == "y")
+					{
+						notes <- readline(prompt=cat("\nenter the notes:\n\n"))
+					}
+					else
+					{
+						notes <- NA
+					}
+					
+					#saving the parameters and details to expressionVScontacts_plots.txt
+					expressionVScontacts_plots[nrow(expressionVScontacts_plots)+1,] <- c(nm,struct,conts_filename,FPKM_filename1,FPKM_filename2,bpORfpkm,percentageOf,DandT1,CO_type,FPKM_cutoff,FPKM_CO_appliedTo,Intersection_chromosomes,notes)
+					#sorting the list of experiments by bait alphabetically (and sorting the row indices)
+					expressionVScontacts_plots <- expressionVScontacts_plots[order(expressionVScontacts_plots$Plotfile_name),]
+					rownames(expressionVScontacts_plots) <- seq(length=nrow(expressionVScontacts_plots))
+					#adding the new data to the file (by erasing the old one and creating a new one)
+					system("rm expressionVScontacts_plots.txt")
+					write.table(expressionVScontacts_plots,"expressionVScontacts_plots.txt",sep="\t",row.names = FALSE,col.names = TRUE,quote=FALSE)			
+				}	
+			}							
 		}		
 		else if(ans3 == 4) #exit
 		{

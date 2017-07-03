@@ -895,7 +895,113 @@ tissue_ChIPseq_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 					system("rm ChIPseqVScontacts_plots.txt")
 					write.table(ChIPseqVScontacts_plots,"ChIPseqVScontacts_plots.txt",sep="\t",row.names = FALSE,col.names = TRUE,quote=FALSE)			
 				}
-			}	
+			}
+			
+			#venn diagrams
+			if(readline(prompt=cat("\nwould you like to create venn diagrams?\ny/n\n\n")) == "y")
+			{
+				#creating the venn data frame for 0 percent
+				venn_DF <- data.frame(rep(1,nrow(conts)),matrix(0,nrow(conts),2))##!
+
+				cat("\nvenn diagram parameters:\n\n")
+				venn_ans1 <- readline(prompt=cat("\nwould you like to consider overlaps to be only those that intersect more than 1 bp?\ny/n\n\n"))
+				if(venn_ans1 == "y")
+				{
+					ovlp_cov <- as.numeric(readline(prompt=cat("\nenter the minimum overlap coverage that will be considered an intersection? (between 0 and 1)\n\n")))
+					
+					venn_ans2 <- readline(prompt=cat("\nyou have chosen to accept an intersection only if there is at least",ovlp_cov,"overlap.\nwould you consider accepting an intersection if there is more than a certain amount of reads that intersect (e.g. if you there are more than an x amount of reads intersected, even though each one doesn't overlap more than",ovlp_cov,", altogether they are sufficient enough to be considered as an overlap)\ny/n\n\n"))
+					if(venn_ans2 == "y")
+					{
+						ovlp_num <- as.integer(readline(prompt=cat("\nhow many reads (minimum) intersected will be considered as an overlap?\n\n")))
+					}
+				}
+				
+				#filling in the data for the venn diagrams
+				if(venn_ans1 == "y")
+				{
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/peaks1_afterCO.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_A1.bed",sep=""))
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/peaks2_afterCO.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_A2.bed",sep=""))
+					venn_A1 <- read.table(paste("~/Analyze4C/temp/venn_A1.bed",sep=""))
+					venn_A2 <- read.table(paste("~/Analyze4C/temp/venn_A2.bed",sep=""))
+					system("rm ~/Analyze4C/temp/venn_A1.bed")
+					system("rm ~/Analyze4C/temp/venn_A2.bed")
+					if(venn_ans2 == "y")
+					{
+						system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/peaks1_afterCO.bed -c > ~/Analyze4C/temp/venn_B1.bed",sep=""))
+						system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/peaks2_afterCO.bed -c > ~/Analyze4C/temp/venn_B2.bed",sep=""))
+						venn_B1 <- read.table(paste("~/Analyze4C/temp/venn_B1.bed",sep=""))
+						venn_B2 <- read.table(paste("~/Analyze4C/temp/venn_B2.bed",sep=""))
+						#removing files
+						system("rm ~/Analyze4C/temp/venn_B1.bed")
+						system("rm ~/Analyze4C/temp/venn_B2.bed")
+						#if the number in the 1st is 0 but the number in the 2nd is more than ovlp_num then we will consider it to be 1
+						venn_A1[venn_B1[,4]>=ovlp_num,4] <- 1
+						venn_A2[venn_B2[,4]>=ovlp_num,4] <- 1
+					}
+					#add the correct number to each column
+					venn_DF[venn_A1[,4]>=1,2] <- 1
+					venn_DF[venn_A2[,4]>=1,3] <- 1
+				}
+				else
+				{
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/peaks1_afterCO.bed -c > ~/Analyze4C/temp/venn1.bed",sep=""))
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/peaks2_afterCO.bed -c > ~/Analyze4C/temp/venn2.bed",sep=""))
+					venn1 <- read.table(paste("~/Analyze4C/temp/venn1.bed",sep=""))
+					venn2 <- read.table(paste("~/Analyze4C/temp/venn2.bed",sep=""))
+					system("rm ~/Analyze4C/temp/venn1.bed")
+					system("rm ~/Analyze4C/temp/venn2.bed")
+					#add the correct number to each column
+					venn_DF[venn1[,4]>=1,2] <- 1
+					venn_DF[venn2[,4]>=1,3] <- 1				
+				}
+				
+				# create venn diagram using the data frame venn_DF
+				venn_flag <- 0 #if venn_flag is 1 then we save a diagram and it should be recorded in 'ChIPseqVScontacts_plots'
+				vennName <- paste("venn_psContsVS2peaks_",DandT2,".jpg",sep="")
+				venn_flag <- venn_creator(venn_DF,2,1,vennName)			
+
+				#recording the data into 'ChIPseqVScontacts_plots.txt'
+				if(venn_flag == 1)
+				{					
+					#getting parameters for ChIPseqVScontacts_plots.txt:
+					struct <- "two peaks files intersected with a contact bands file - Venn Diagram"					
+					bpORpeaks <- NA
+					percentageOf <- NA
+					if(ans4 == 1)
+					{
+						peaks_CO_appliedTo <- "whole genome"
+					}
+					else if(ans4 == 2)
+					{
+						peaks_CO_appliedTo <- "trans"
+					}
+					else if(ans4 == 3)
+					{
+						peaks_CO_appliedTo <- "each chromosome separately"
+					}
+
+					Intersection_chromosomes <- "whole genome"
+					
+					ans7 <- readline(prompt=cat("\nwould you like to include any additional notes about the plot (this all will be written in the ChIPseqVScontacts_plots.txt file)?\ny/n\n"))
+					if(ans7 == "y")
+					{
+						notes <- readline(prompt=cat("\nenter the notes:\n\n"))
+					}
+					else
+					{
+						notes <- NA
+					}
+					
+					#saving the parameters and details to ChIPseqVScontacts_plots.txt
+					ChIPseqVScontacts_plots[nrow(ChIPseqVScontacts_plots)+1,] <- c(nm,struct,conts_filename,peaks_filename1,peaks_filename2,bpORpeaks,percentageOf,DandT1,CO_col,CO_type,peaks_cutoff,peaks_CO_appliedTo,value_col,Intersection_chromosomes,notes)
+					#sorting the list of experiments by bait alphabetically (and sorting the row indices)
+					ChIPseqVScontacts_plots <- ChIPseqVScontacts_plots[order(ChIPseqVScontacts_plots$Plotfile_name),]
+					rownames(ChIPseqVScontacts_plots) <- seq(length=nrow(ChIPseqVScontacts_plots))
+					#adding the new data to the file (by erasing the old one and creating a new one)
+					system("rm ChIPseqVScontacts_plots.txt")
+					write.table(ChIPseqVScontacts_plots,"ChIPseqVScontacts_plots.txt",sep="\t",row.names = FALSE,col.names = TRUE,quote=FALSE)			
+				}	
+			}								
 		}
 		else if(ans3 == 2) #trans
 		{
@@ -1354,7 +1460,113 @@ tissue_ChIPseq_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 					system("rm ChIPseqVScontacts_plots.txt")
 					write.table(ChIPseqVScontacts_plots,"ChIPseqVScontacts_plots.txt",sep="\t",row.names = FALSE,col.names = TRUE,quote=FALSE)			
 				}
-			}	
+			}
+
+			#venn diagrams
+			if(readline(prompt=cat("\nwould you like to create venn diagrams?\ny/n\n\n")) == "y")
+			{
+				#creating the venn data frame for 0 percent
+				venn_DF <- data.frame(rep(1,nrow(conts)),matrix(0,nrow(conts),2))##!
+
+				cat("\nvenn diagram parameters:\n\n")
+				venn_ans1 <- readline(prompt=cat("\nwould you like to consider overlaps to be only those that intersect more than 1 bp?\ny/n\n\n"))
+				if(venn_ans1 == "y")
+				{
+					ovlp_cov <- as.numeric(readline(prompt=cat("\nenter the minimum overlap coverage that will be considered an intersection? (between 0 and 1)\n\n")))
+					
+					venn_ans2 <- readline(prompt=cat("\nyou have chosen to accept an intersection only if there is at least",ovlp_cov,"overlap.\nwould you consider accepting an intersection if there is more than a certain amount of reads that intersect (e.g. if you there are more than an x amount of reads intersected, even though each one doesn't overlap more than",ovlp_cov,", altogether they are sufficient enough to be considered as an overlap)\ny/n\n\n"))
+					if(venn_ans2 == "y")
+					{
+						ovlp_num <- as.integer(readline(prompt=cat("\nhow many reads (minimum) intersected will be considered as an overlap?\n\n")))
+					}
+				}
+				
+				#filling in the data for the venn diagrams
+				if(venn_ans1 == "y")
+				{
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/peaks1_afterCO.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_A1.bed",sep=""))
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/peaks2_afterCO.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_A2.bed",sep=""))
+					venn_A1 <- read.table(paste("~/Analyze4C/temp/venn_A1.bed",sep=""))
+					venn_A2 <- read.table(paste("~/Analyze4C/temp/venn_A2.bed",sep=""))
+					system("rm ~/Analyze4C/temp/venn_A1.bed")
+					system("rm ~/Analyze4C/temp/venn_A2.bed")
+					if(venn_ans2 == "y")
+					{
+						system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/peaks1_afterCO.bed -c > ~/Analyze4C/temp/venn_B1.bed",sep=""))
+						system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/peaks2_afterCO.bed -c > ~/Analyze4C/temp/venn_B2.bed",sep=""))
+						venn_B1 <- read.table(paste("~/Analyze4C/temp/venn_B1.bed",sep=""))
+						venn_B2 <- read.table(paste("~/Analyze4C/temp/venn_B2.bed",sep=""))
+						#removing files
+						system("rm ~/Analyze4C/temp/venn_B1.bed")
+						system("rm ~/Analyze4C/temp/venn_B2.bed")
+						#if the number in the 1st is 0 but the number in the 2nd is more than ovlp_num then we will consider it to be 1
+						venn_A1[venn_B1[,4]>=ovlp_num,4] <- 1
+						venn_A2[venn_B2[,4]>=ovlp_num,4] <- 1
+					}
+					#add the correct number to each column
+					venn_DF[venn_A1[,4]>=1 & venn_A1[,1]!=cis,2] <- 1
+					venn_DF[venn_A2[,4]>=1 & venn_A2[,1]!=cis,3] <- 1
+				}
+				else
+				{
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/peaks1_afterCO.bed -c > ~/Analyze4C/temp/venn1.bed",sep=""))
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/peaks2_afterCO.bed -c > ~/Analyze4C/temp/venn2.bed",sep=""))
+					venn1 <- read.table(paste("~/Analyze4C/temp/venn1.bed",sep=""))
+					venn2 <- read.table(paste("~/Analyze4C/temp/venn2.bed",sep=""))
+					system("rm ~/Analyze4C/temp/venn1.bed")
+					system("rm ~/Analyze4C/temp/venn2.bed")
+					#add the correct number to each column
+					venn_DF[venn1[,4]>=1 & venn1[,1]!=cis,2] <- 1
+					venn_DF[venn2[,4]>=1 & venn2[,1]!=cis,3] <- 1				
+				}
+				browser()
+				# create venn diagram using the data frame venn_DF
+				venn_flag <- 0 #if venn_flag is 1 then we save a diagram and it should be recorded in 'ChIPseqVScontacts_plots'
+				vennName <- paste("venn_psContsVS2peaks_",DandT2,".jpg",sep="")
+				venn_flag <- venn_creator(venn_DF,2,1,vennName)			
+
+				#recording the data into 'ChIPseqVScontacts_plots.txt'
+				if(venn_flag == 1)
+				{					
+					#getting parameters for ChIPseqVScontacts_plots.txt:
+					struct <- "two peaks files intersected with a contact bands file - Venn Diagram"					
+					bpORpeaks <- NA
+					percentageOf <- NA
+					if(ans4 == 1)
+					{
+						peaks_CO_appliedTo <- "whole genome"
+					}
+					else if(ans4 == 2)
+					{
+						peaks_CO_appliedTo <- "trans"
+					}
+					else if(ans4 == 3)
+					{
+						peaks_CO_appliedTo <- "each chromosome separately"
+					}
+
+					Intersection_chromosomes <- "trans"
+					
+					ans7 <- readline(prompt=cat("\nwould you like to include any additional notes about the plot (this all will be written in the ChIPseqVScontacts_plots.txt file)?\ny/n\n"))
+					if(ans7 == "y")
+					{
+						notes <- readline(prompt=cat("\nenter the notes:\n\n"))
+					}
+					else
+					{
+						notes <- NA
+					}
+					
+					#saving the parameters and details to ChIPseqVScontacts_plots.txt
+					ChIPseqVScontacts_plots[nrow(ChIPseqVScontacts_plots)+1,] <- c(nm,struct,conts_filename,peaks_filename1,peaks_filename2,bpORpeaks,percentageOf,DandT1,CO_col,CO_type,peaks_cutoff,peaks_CO_appliedTo,value_col,Intersection_chromosomes,notes)
+					#sorting the list of experiments by bait alphabetically (and sorting the row indices)
+					ChIPseqVScontacts_plots <- ChIPseqVScontacts_plots[order(ChIPseqVScontacts_plots$Plotfile_name),]
+					rownames(ChIPseqVScontacts_plots) <- seq(length=nrow(ChIPseqVScontacts_plots))
+					#adding the new data to the file (by erasing the old one and creating a new one)
+					system("rm ChIPseqVScontacts_plots.txt")
+					write.table(ChIPseqVScontacts_plots,"ChIPseqVScontacts_plots.txt",sep="\t",row.names = FALSE,col.names = TRUE,quote=FALSE)			
+				}	
+			}										
 		}	
 		else if(ans3 == 3) #chromosomes separately
 		{
@@ -1909,7 +2121,121 @@ tissue_ChIPseq_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 					system("rm ChIPseqVScontacts_plots.txt")
 					write.table(ChIPseqVScontacts_plots,"ChIPseqVScontacts_plots.txt",sep="\t",row.names = FALSE,col.names = TRUE,quote=FALSE)			
 				}
-			}	
+			}
+			
+			#venn diagrams
+			if(readline(prompt=cat("\nwould you like to create venn diagrams?\ny/n\n\n")) == "y")
+			{
+				#creating the venn data frame for 0 percent
+				venn_DF <- data.frame(rep(1,nrow(conts)),matrix(0,nrow(conts),2))##!
+
+				cat("\nvenn diagram parameters:\n\n")
+				venn_ans1 <- readline(prompt=cat("\nwould you like to consider overlaps to be only those that intersect more than 1 bp?\ny/n\n\n"))
+				if(venn_ans1 == "y")
+				{
+					ovlp_cov <- as.numeric(readline(prompt=cat("\nenter the minimum overlap coverage that will be considered an intersection? (between 0 and 1)\n\n")))
+					
+					venn_ans2 <- readline(prompt=cat("\nyou have chosen to accept an intersection only if there is at least",ovlp_cov,"overlap.\nwould you consider accepting an intersection if there is more than a certain amount of reads that intersect (e.g. if you there are more than an x amount of reads intersected, even though each one doesn't overlap more than",ovlp_cov,", altogether they are sufficient enough to be considered as an overlap)\ny/n\n\n"))
+					if(venn_ans2 == "y")
+					{
+						ovlp_num <- as.integer(readline(prompt=cat("\nhow many reads (minimum) intersected will be considered as an overlap?\n\n")))
+					}
+				}
+				
+				venn_flag <- 0 #if venn_flag is 1 then we save a diagram and it should be recorded in 'ChIPseqVScontacts_plots'
+				#filling in the data for the venn diagrams
+				if(venn_ans1 == "y")
+				{
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/peaks1_afterCO.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_A1.bed",sep=""))
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/peaks2_afterCO.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_A2.bed",sep=""))
+					venn_A1 <- read.table(paste("~/Analyze4C/temp/venn_A1.bed",sep=""))
+					venn_A2 <- read.table(paste("~/Analyze4C/temp/venn_A2.bed",sep=""))
+					system("rm ~/Analyze4C/temp/venn_A1.bed")
+					system("rm ~/Analyze4C/temp/venn_A2.bed")
+					if(venn_ans2 == "y")
+					{
+						system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/peaks1_afterCO.bed -c > ~/Analyze4C/temp/venn_B1.bed",sep=""))
+						system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/peaks2_afterCO.bed -c > ~/Analyze4C/temp/venn_B2.bed",sep=""))
+						venn_B1 <- read.table(paste("~/Analyze4C/temp/venn_B1.bed",sep=""))
+						venn_B2 <- read.table(paste("~/Analyze4C/temp/venn_B2.bed",sep=""))
+						#removing files
+						system("rm ~/Analyze4C/temp/venn_B1.bed")
+						system("rm ~/Analyze4C/temp/venn_B2.bed")
+						#if the number in the 1st is 0 but the number in the 2nd is more than ovlp_num then we will consider it to be 1
+						venn_A1[venn_B1[,4]>=ovlp_num,4] <- 1
+						venn_A2[venn_B2[,4]>=ovlp_num,4] <- 1
+					}
+					#add the correct number to each column and create venn diagram using the data frame venn_DF
+					for(w in 1:numOFchroms)
+					{
+						cat("\nchromosome ",w,":\n\n",sep="")
+						venn_DF[venn_A1[,4]>=1 & venn_A1[,1]==w,2] <- 1
+						venn_DF[venn_A2[,4]>=1 & venn_A2[,1]==w,3] <- 1
+						vennName <- paste("venn_psContsVS2peaks_chr",w,"_",DandT2,".jpg",sep="")
+						venn_flag <- venn_creator(venn_DF,2,1,vennName)						
+					}	
+				}
+				else
+				{
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/peaks1_afterCO.bed -c > ~/Analyze4C/temp/venn1.bed",sep=""))
+					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/peaks2_afterCO.bed -c > ~/Analyze4C/temp/venn2.bed",sep=""))
+					venn1 <- read.table(paste("~/Analyze4C/temp/venn1.bed",sep=""))
+					venn2 <- read.table(paste("~/Analyze4C/temp/venn2.bed",sep=""))
+					system("rm ~/Analyze4C/temp/venn1.bed")
+					system("rm ~/Analyze4C/temp/venn2.bed")
+					#add the correct number to each column and create venn diagram using the data frame venn_DF
+					for(w in 1:numOFchroms)
+					{
+						cat("\nchromosome ",w,":\n\n",sep="")
+						venn_DF[venn1[,4]>=1 & venn1[,1]==w,2] <- 1
+						venn_DF[venn2[,4]>=1 & venn2[,1]==w,3] <- 1
+						vennName <- paste("venn_psContsVS2peaks_chr",w,"_",DandT2,".jpg",sep="")
+						venn_flag <- venn_creator(venn_DF,2,1,vennName)	
+					}	
+				}
+								
+				#recording the data into 'ChIPseqVScontacts_plots.txt'
+				if(venn_flag == 1)
+				{					
+					#getting parameters for ChIPseqVScontacts_plots.txt:
+					struct <- "two peaks files intersected with a contact bands file - Venn Diagram"					
+					bpORpeaks <- NA
+					percentageOf <- NA
+					if(ans4 == 1)
+					{
+						peaks_CO_appliedTo <- "whole genome"
+					}
+					else if(ans4 == 2)
+					{
+						peaks_CO_appliedTo <- "trans"
+					}
+					else if(ans4 == 3)
+					{
+						peaks_CO_appliedTo <- "each chromosome separately"
+					}
+
+					Intersection_chromosomes <- "each chromosome separately"
+					
+					ans7 <- readline(prompt=cat("\nwould you like to include any additional notes about the plot (this all will be written in the ChIPseqVScontacts_plots.txt file)?\ny/n\n"))
+					if(ans7 == "y")
+					{
+						notes <- readline(prompt=cat("\nenter the notes:\n\n"))
+					}
+					else
+					{
+						notes <- NA
+					}
+					
+					#saving the parameters and details to ChIPseqVScontacts_plots.txt
+					ChIPseqVScontacts_plots[nrow(ChIPseqVScontacts_plots)+1,] <- c(nm,struct,conts_filename,peaks_filename1,peaks_filename2,bpORpeaks,percentageOf,DandT1,CO_col,CO_type,peaks_cutoff,peaks_CO_appliedTo,value_col,Intersection_chromosomes,notes)
+					#sorting the list of experiments by bait alphabetically (and sorting the row indices)
+					ChIPseqVScontacts_plots <- ChIPseqVScontacts_plots[order(ChIPseqVScontacts_plots$Plotfile_name),]
+					rownames(ChIPseqVScontacts_plots) <- seq(length=nrow(ChIPseqVScontacts_plots))
+					#adding the new data to the file (by erasing the old one and creating a new one)
+					system("rm ChIPseqVScontacts_plots.txt")
+					write.table(ChIPseqVScontacts_plots,"ChIPseqVScontacts_plots.txt",sep="\t",row.names = FALSE,col.names = TRUE,quote=FALSE)			
+				}	
+			}			
 		}		
 		else if(ans3 == 4) #exit
 		{

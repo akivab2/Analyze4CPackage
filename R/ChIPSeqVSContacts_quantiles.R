@@ -14,6 +14,8 @@
 
 #if the user wants to test the whole genome without dividing it into quantiles, they just need to enter the quantile of 0%
 
+#this function also returns a venn diagram of the contact bands that intersect with the peaks data
+
 ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFintersections_plots,rearranged_rawData)
 {
 	#starting by clearing out all files from 'temp'
@@ -49,11 +51,18 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 	first <- -1 #as long as first equals -1 we know there was no translocation removed
 	all_rem <- list() #this will contain all the details of the sections removed
 	rem_counter <- 1 #this will counted how many sections were removed
+	venn_col_num <- 1 #this is the index of the column for each file,column 1 is occupied by the ChIPseq peaks
+	venn_DF <- list(0) #creating the empty list with the data frames for the venn diagrams
 
 	for(z in 1:numOFexperiments)
 	{
 		cat("\n******************************************************************************************\n")
 		cat("\nexperiment number ",z,":\n",sep="")
+
+		#initializing the venn index to 1
+		venn_ind <- 1
+		venn_col_num <- venn_col_num + 1
+
 		#choosing p-score and peaks files, and getting the specific data from those files
 		{
 			#choose a p-score file:
@@ -415,6 +424,15 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 				#creating the bed files for the p-score and peaks data in the first range
 				write.table(ps_conts,paste("~/Analyze4C/temp/ps_conts_0per.bed",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE,sep="\t")
 				write.table(peaks_range,paste("~/Analyze4C/temp/peaks_0per.bed",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE,sep="\t")					
+
+				#creating the venn data frame for 0 percent
+				if(z == 1)
+				{
+					#venn_DF[[venn_ind]] <- list(0)
+					#venn_DF[[venn_ind]][[1]] <- as.character(paste(peaks_range[,1],peaks_range[,2],peaks_range[,3]))
+					venn_DF[[venn_ind]] <- data.frame(rep(1,nrow(peaks_range)),matrix(0,nrow(peaks_range),numOFexperiments))
+					venn_ind <- venn_ind + 1
+				}
 			}
 			
 			#getting the quantile p-scores of the ranges of quantile percent the user entered (except for the last). and then creating contact bands of this range. this will only be performed if there are more than two quantile percentages entered.
@@ -449,6 +467,15 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 					#creating the bed files for the p-score and peaks data in the range			
 					write.table(ps_conts,paste("~/Analyze4C/temp/ps_conts_",quant,"per.bed",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE,sep="\t")
 					write.table(peaks_range,paste("~/Analyze4C/temp/peaks_",quant,"per.bed",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE,sep="\t")
+					
+					#creating the venn data frame for all but 0 percent
+					if(z == 1)
+					{
+						#venn_DF[[venn_ind]] <- list(0)
+						#venn_DF[[venn_ind]][[1]] <- as.character(paste(peaks_range[,1],peaks_range[,2],peaks_range[,3]))
+						venn_DF[[venn_ind]] <- data.frame(rep(1,nrow(peaks_range)),matrix(0,nrow(peaks_range),numOFexperiments))
+						venn_ind <- venn_ind + 1
+					}
 				}
 			}
 			
@@ -480,6 +507,14 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 				#creating the bed files for the p-score and peaks data in the last range					
 				write.table(ps_conts,paste("~/Analyze4C/temp/ps_conts_",quant,"per.bed",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE,sep="\t")
 				write.table(peaks_range,paste("~/Analyze4C/temp/peaks_",quant,"per.bed",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE,sep="\t")
+				
+				#creating the venn data frame for the last quantile percent
+				if(z == 1)
+				{
+					#venn_DF[[venn_ind]] <- list(0)
+					#venn_DF[[venn_ind]][[1]] <- as.character(paste(peaks_range[,1],peaks_range[,2],peaks_range[,3]))
+					venn_DF[[venn_ind]] <- data.frame(rep(1,nrow(peaks_range)),matrix(0,nrow(peaks_range),numOFexperiments))					
+				}				
 			}		
 		}
 		
@@ -528,6 +563,22 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 			
 			quant_name <- "0%"
 			intersections_names <- c(intersections_names,quant_name)
+
+			if(z == 1)
+			{
+				cat("\nvenn diagram parameters:\n\n")
+				venn_ans1 <- readline(prompt=cat("\nwould you like to consider overlaps to be only those that intersect more than 1 bp?\ny/n\n\n"))
+				if(venn_ans1 == "y")
+				{
+					ovlp_cov <- as.numeric(readline(prompt=cat("\nenter the minimum overlap coverage that will be considered an intersection? (between 0 and 1)\n\n")))
+					
+					venn_ans2 <- readline(prompt=cat("\nyou have chosen to accept an intersection only if there is at least",ovlp_cov,"overlap.\nwould you consider accepting an intersection if there is more than a certain amount of reads that intersect (e.g. if you there are more than an x amount of reads intersected, even though each one doesn't overlap more than",ovlp_cov,", altogether they are sufficient enough to be considered as an overlap)\ny/n\n\n"))
+					if(venn_ans2 == "y")
+					{
+						ovlp_num <- as.integer(readline(prompt=cat("\nhow many reads (minimum) intersected will be considered as an overlap?\n\n")))
+					}
+				}
+			}
 			
 			for(n in 1:numOfquants)
 			{
@@ -667,6 +718,49 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 			
 			}	
 		}
+
+	#filling in the data for the venn diagrams	
+	{
+		if(quant_percentages[1] != 0)
+		{
+			venn_quants <- c(0,quant_percentages)
+		}
+		else
+		{
+			venn_quants <- quant_percentages
+		}
+
+		ind_count <- 0
+		for(m in (venn_quants)*100)
+		{	
+			ind_count <- ind_count + 1
+			if(venn_ans1 == "y")
+			{
+				system(paste("bedtools intersect -a ~/Analyze4C/temp/peaks_",m,"per.bed -b ~/Analyze4C/temp/ps_conts_",m,"per.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_",m,"per_A.bed",sep=""))
+				venn_A <- read.table(paste("~/Analyze4C/temp/venn_",m,"per_A.bed",sep=""))
+				if(venn_ans2 == "y")
+				{
+					system(paste("bedtools intersect -a ~/Analyze4C/temp/peaks_",m,"per.bed -b ~/Analyze4C/temp/ps_conts_",m,"per.bed -c > ~/Analyze4C/temp/venn_",m,"per_B.bed",sep=""))
+					venn_B <- read.table(paste("~/Analyze4C/temp/venn_",m,"per_B.bed",sep=""))
+					#if the number in the 1st is 0 but the number in the 2nd is more than ovlp_num then we will consider it to be 1
+					venn_A[venn_B[,5]>=ovlp_num,5] <- 1
+				}
+				#add the correct number to venn_col_num rows
+#i need to collect the data differently into venn_DF, collect the actual indices that have 1, and turn them into a one string, and then list them together (instead of columns in a data frame)
+# and then use calculate.overlap
+				#venn_DF[[ind_count]][[venn_col_num]] <- as.character(paste(venn_A[venn_A[,5] == 1,1:3][,1],venn_A[venn_A[,5] == 1,1:3][,2],venn_A[venn_A[,5] == 1,1:3][,3]))			
+				venn_DF[[ind_count]][venn_A[,5]>=1,venn_col_num] <- 1
+			}
+			else
+			{
+				system(paste("bedtools intersect -a ~/Analyze4C/temp/peaks_",m,"per.bed -b ~/Analyze4C/temp/ps_conts_",m,"per.bed -c > ~/Analyze4C/temp/venn_",m,"per.bed",sep=""))
+				venn <- read.table(paste("~/Analyze4C/temp/venn_",m,"per.bed",sep=""))
+				#venn_DF[[ind_count]][[venn_col_num]] <- as.character(paste(venn[venn[,5] == 1,1:3][,1],venn[venn[,5] == 1,1:3][,2],venn[venn[,5] == 1,1:3][,3]))			
+				#add the correct number to venn_col_num rows
+				venn_DF[[ind_count]][venn[,5]>=1,venn_col_num] <- 1	
+			}			
+		}
+	}
 		
 		#removing the files from 'temp' folder
 		{
@@ -821,11 +915,11 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 			print(psych::phi(matrix(c(peaks_dataframe[peaks_dataframe$experiment==exp_names[1],2][e],summer_peaks_self_all[[1]][1]-peaks_dataframe[peaks_dataframe$experiment==exp_names[1],2][e],peaks_dataframe[peaks_dataframe$experiment==exp_names[2],2][e],summer_peaks_self_all[[2]][1]-peaks_dataframe[peaks_dataframe$experiment==exp_names[2],2][e]),ncol=2,byrow=TRUE)))
 			cat("\n")
 		}
+		names(ORs1) <- percentages_ps
+		cat("All odds ratios:\n")
+		print(ORs1)
+		cat("\n\n")		
 	}
-	names(ORs1) <- percentages_ps
-	cat("All odds ratios:\n")
-	print(ORs1)
-	cat("\n\n")
 	
 	cat("\nplotting the peaks bands bp percentage data\nplease wait...\n\n")	
 	print(peaks_plot)
@@ -912,11 +1006,11 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 			print(psych::phi(matrix(c(ps_dataframe[ps_dataframe$experiment==exp_names[1],2][e],summer_ps_self_all[[1]][1]-ps_dataframe[ps_dataframe$experiment==exp_names[1],2][e],ps_dataframe[ps_dataframe$experiment==exp_names[2],2][e],summer_ps_self_all[[2]][1]-ps_dataframe[ps_dataframe$experiment==exp_names[2],2][e]),ncol=2,byrow=TRUE)))
 			cat("\n")			
 		}
+		names(ORs2) <- percentages_ps	
+		cat("All odds ratios:\n")
+		print(ORs2)
+		cat("\n\n")
 	}
-	names(ORs2) <- percentages_ps	
-	cat("All odds ratios:\n")
-	print(ORs2)
-	cat("\n\n")	
 	
 	cat("\nplotting the contact bands bp percentage data\nplease wait...\n\n")
 	print(ps_plot)
@@ -928,8 +1022,18 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 		ps_plot_name <- paste("~/Analyze4C/plots/expressionVScontacts_sumOFintersections_pScore_plot_",DandT2,".png",sep="")
 		ggplot2::ggsave(ps_plot_name,width=wd,height=ht)		
 	}
+
+	# create venn diagram using the data frame venn_DF[[ind_count]]	
+	venn_flag <- 0 #if venn_flag is 1 then we save a diagram and it should be recorded in 'ChIPseqVScontacts_sumOFintersections_plots'
+	for(w in 1:length(venn_quants))
+	{
+		#depending on how many files numOFexperiments is, the venn diagram function will be different
+		vennName <- paste("venn_quantiles_",as.numeric(venn_quants[w])*100,"per_",DandT2,".jpg",sep="")
+		venn_flag <- venn_creator(venn_DF[[w]],numOFexperiments,1,vennName)			
+	}
 	
-	if(choice6 == "y" | choice7 == "y")
+	#recording the data into 'ChIPseqVScontacts_sumOFintersections_plots.txt'
+	if(choice6 == "y" | choice7 == "y" | venn_flag == 1)
 	{
 		#saving the parameters and details to ChIPseqVScontacts_sumOFintersections_plots.txt
 		ChIPseqVScontacts_sumOFintersections_plots[nrow(ChIPseqVScontacts_sumOFintersections_plots)+1,] <- c(DandT1,file.name_peaks,numOFexperiments,exps,int_chroms,summed_chr,RE_gap,bp_gap,quant_source,value_source)
@@ -942,6 +1046,7 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 	}
 	choice6 <- "n"
 	choice7 <- "n"
+	venn_flag <- 0	
 	#intersect the peaks of a quartile and the contact bands of the same quartile
 	#the methods of intersection could be: 1) sum of all intersected (whole genome, cis, trans, or by chromosome). 2) sum all bps of intersections (whole genome, cis, trans, or by chromosome). 3) create windows and do 1 or 2, or count the reads of the RE sites where the contacts are and the peaks.
 }

@@ -569,6 +569,7 @@ ChIPSeqCorContacts <- function(Experiments_4C,rearranged_rawData,ChIPseqVScontac
 			pointer <- 1
 			peaks_fin <- c()
 			ps_fin <- c()
+			rawData_removed <- c() 
 			for(r in seq(1,length(lin_nums2),by=2))
 			{
 				first <- lin_nums2[r]
@@ -587,6 +588,8 @@ ChIPSeqCorContacts <- function(Experiments_4C,rearranged_rawData,ChIPseqVScontac
 					ps_fin <- rbind(ps_fin,ps_t)
 					peaks_t <- peaks_afterCO[peaks_afterCO[,1]==all_chroms[pointer],]
 					peaks_fin <- rbind(peaks_fin,peaks_t)
+					rawData_removed_temp <- raw_dat[raw_dat[,1]==all_chroms[pointer],] #creating the raw data removed data frame 
+					rawData_removed <- rbind(rawData_removed,rawData_removed_temp) 					
 					pointer <- pointer + 1
 				}
 				
@@ -663,6 +666,8 @@ ChIPSeqCorContacts <- function(Experiments_4C,rearranged_rawData,ChIPseqVScontac
 				}
 				ps_fin <- rbind(ps_fin,ps_t)	
 				peaks_fin <- rbind(peaks_fin,peaks_t)
+				rawData_removed_temp <- raw_dat[-first:-second,] 
+				rawData_removed <- rbind(rawData_removed,rawData_removed_temp[rawData_removed_temp[,1]==ch,]) 				
 				pointer <- pointer + 1
 			}
 
@@ -673,6 +678,8 @@ ChIPSeqCorContacts <- function(Experiments_4C,rearranged_rawData,ChIPseqVScontac
 				ps_fin <- rbind(ps_fin,ps_t)	
 				peaks_t <- peaks_afterCO[peaks_afterCO[,1]==all_chroms[pointer],]
 				peaks_fin <- rbind(peaks_fin,peaks_t)
+				rawData_removed_temp <- raw_dat[raw_dat[,1]==all_chroms[pointer],] 
+				rawData_removed <- rbind(rawData_removed,rawData_removed_temp) 				
 				pointer <- pointer + 1
 			}
 
@@ -681,6 +688,8 @@ ChIPSeqCorContacts <- function(Experiments_4C,rearranged_rawData,ChIPseqVScontac
 			
 			peaks_afterCO <- peaks_fin
 			rownames(peaks_afterCO) <- seq(length=nrow(peaks_afterCO))
+			
+			rownames(rawData_removed) <- seq(length=nrow(rawData_removed)) 
 		}
 		
 		if(z == 1) #maybe i could remove this condition and have that every time you could enter which ever chrom you want, even different ones
@@ -741,63 +750,65 @@ ChIPSeqCorContacts <- function(Experiments_4C,rearranged_rawData,ChIPseqVScontac
 		write.table(ps_bed,"~/Analyze4C/temp/ps_bed.bed",row.names=FALSE,col.names=FALSE,quote=FALSE,sep="\t") #creating a temp file of the p-score data chosen			
 		write.table(peaks_dat,"~/Analyze4C/temp/peaks.bed",row.names=FALSE,col.names=FALSE,quote=FALSE,sep="\t") #creating a temp file of the peaks data chosen			
 
+		##!
 		#getting the raw data that corresponds to the p-score file, in order to get the corresponding reads for each RE site
-		cat("\nthis is the current p-score file that is being tested:\n",ps.file,"\n")
-		repeat
-		{
-			choice <- as.integer(readline(prompt=cat("\nenter the number of the folder from which contains the raw data that the p-score file was created from (look at the name of the p-score file for clues):\n\n1) original\n2) rearranged\n3) coverage removed\n\n")))
-			if(choice == 2)
-			{
-				ls_files <- system("ls ~/Analyze4C/rawData/rearranged",intern=TRUE)
-			}
-			else if(choice == 3)
-			{
-				ls_files <- system("ls ~/Analyze4C/rawData/coverage_removed",intern=TRUE)
-			}
-			else
-			{
-				ls_files <- system("ls ~/Analyze4C/rawData/original",intern=TRUE)
-			}		
-
-			if(length(ls_files) != 0)
-			{	
-				file.name <- readline(prompt=cat("\nchoose from these raw data files (make sure the name is similar to the p-score files):\n",ls_files,"\n",sep="\n"))
-				ind_files <- pmatch(file.name,ls_files,nomatch=0)
-				if(ind_files == 0)
-				{
-					cat("no such file exists.\nplease try again.\n\n")
-				}
-				else
-				{
-					break
-				}
-			}
-			else
-			{
-				cat("\nthis folder is empty. please choose a different folder from which you would like to use a file\n\n")
-			}			
-		}
+		#cat("\nthis is the current p-score file that is being tested:\n",ps.file,"\n")
+		#repeat
+		#{
+		#	choice <- as.integer(readline(prompt=cat("\nenter the number of the folder from which contains the raw data that the p-score file was created from (look at the name of the p-score file for clues):\n\n1) original\n2) rearranged\n3) coverage removed\n\n")))
+		#	if(choice == 2)
+		#	{
+		#		ls_files <- system("ls ~/Analyze4C/rawData/rearranged",intern=TRUE)
+		#	}
+		#	else if(choice == 3)
+		#	{
+		#		ls_files <- system("ls ~/Analyze4C/rawData/coverage_removed",intern=TRUE)
+		#	}
+		#	else
+		#	{
+		#		ls_files <- system("ls ~/Analyze4C/rawData/original",intern=TRUE)
+		#	}		
+		#
+		#	if(length(ls_files) != 0)
+		#	{	
+		#		file.name <- readline(prompt=cat("\nchoose from these raw data files (make sure the name is similar to the p-score files):\n",ls_files,"\n",sep="\n"))
+		#		ind_files <- pmatch(file.name,ls_files,nomatch=0)
+		#		if(ind_files == 0)
+		#		{
+		#			cat("no such file exists.\nplease try again.\n\n")
+		#		}
+		#		else
+		#		{
+		#			break
+		#		}
+		#	}
+		#	else
+		#	{
+		#		cat("\nthis folder is empty. please choose a different folder from which you would like to use a file\n\n")
+		#	}			
+		#}
 		#importing the data from the file
-		if(choice == 2)
-		{
-			rawData <- read.table(paste("~/Analyze4C/rawData/rearranged/",file.name,sep=""))
-		}
-		else if(choice == 3)
-		{
-			rawData <- read.table(paste("~/Analyze4C/rawData/coverage_removed/",file.name,sep=""))
-		}
-		else
-		{
-			rawData <- read.table(paste("~/Analyze4C/rawData/original/",file.name,sep=""))
-		}
-	
-		#add an index to the rawData file
+		#if(choice == 2)
+		#{
+		#	rawData <- read.table(paste("~/Analyze4C/rawData/rearranged/",file.name,sep=""))
+		#}
+		#else if(choice == 3)
+		#{
+		#	rawData <- read.table(paste("~/Analyze4C/rawData/coverage_removed/",file.name,sep=""))
+		#}
+		#else
+		#{
+		#	rawData <- read.table(paste("~/Analyze4C/rawData/original/",file.name,sep=""))
+		#}
+		##!
+		
+		#add an index to the rawData_removed file 
 		rawData_bed <- c()
 		for(u in chroms)
 		{
-			if(nrow(rawData[rawData[,1]==u,]) != 0)
+			if(nrow(rawData_removed[rawData_removed[,1]==u,]) != 0) 
 			{
-				rawData_chrom_temp <- rawData[rawData[,1]==u,]
+				rawData_chrom_temp <- rawData_removed[rawData_removed[,1]==u,] 
 				rawData_inds_temp <- rawData_chrom_temp[,2]+1
 				if(tail(rawData_inds_temp,1)>genome_sizes[u,2]) #if the addition of the extra index is larger than the size of the chromosome, we will remove that p-score line
 				{
