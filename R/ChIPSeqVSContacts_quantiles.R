@@ -1028,6 +1028,7 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 	for(w in 1:length(venn_quants))
 	{
 		#depending on how many files numOFexperiments is, the venn diagram function will be different
+		cat("\nvenn diagram for quantile",as.numeric(venn_quants[w]),":\n\n")
 		vennName <- paste("venn_quantiles_",as.numeric(venn_quants[w])*100,"per_",DandT2,".jpg",sep="")
 		venn_flag <- venn_creator(venn_DF[[w]],numOFexperiments,1,vennName)			
 	}

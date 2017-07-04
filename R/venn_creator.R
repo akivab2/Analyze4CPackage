@@ -6,6 +6,9 @@
 
 venn_creator <- function(venn_DF,num_of_files,extra=0,vennName = -1)
 {
+	cat("\n*****************************************\n\n")
+	cat("         venn diagram creator:\n\n")
+	cat("*****************************************\n\n")
 	#check how many files there are
 	if(num_of_files + extra > 5) #there can be up to 5 sets (due to VennDiagram package constraints)
 	{
@@ -18,7 +21,7 @@ venn_creator <- function(venn_DF,num_of_files,extra=0,vennName = -1)
 		nms <- c()
 		for(i in 1:(num_of_files + extra))
 		{
-			tmp <- as.character(readline(prompt=cat("enter a name for file no.",i,":\n\n",sep="")))
+			tmp <- as.character(readline(prompt=cat("\nenter a name for file no.",i,":\n\n",sep="")))
 			nms <- c(nms,tmp)
 		}
 		
@@ -111,8 +114,8 @@ venn_creator <- function(venn_DF,num_of_files,extra=0,vennName = -1)
 				vennName <- paste("venn_",DandT2,".jpg",sep="")
 			}
 			
-			jpeg(paste("~/Analyze4C/plots/",vennName,sep=""))
-			grid.draw(venn.plot)
+			jpeg(paste("~/Analyze4C/plots/",vennName,sep=""),width=700,height=700,pointsize=19)
+			grid::grid.draw(venn.plot)
 			dev.off()
 
 			return(1) #states that the diagram was saved
