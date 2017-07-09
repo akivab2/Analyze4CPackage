@@ -16,6 +16,19 @@
 
 #this function also returns a venn diagram of the contact bands that intersect with the peaks data
 
+#lastly, the function compares between each quantile of peaks and all the quantiles of p-score
+#this comparison is important since in order to determine if there is a correlation between the quantile of peaks and quantile of contacts
+#we need to compare each quantile with others. if we see that compared to the others we get more intersections then we can begin to conclude that there might be some correlation
+#visually a bar plot with the percentages of intersections are created for each peaks quantile separately (the percentage of intersections is out of all bps in that specific peaks quantile) - this is to see how different or similar each quantile is from each other
+#and a pie chart is also created in order to view the how many peaks bps are intersected with each p-score quantile, in comparison to the bps that didn't intersect  - this is to see how much intersected compared to not
+
+#note:
+#peaks - you might think that since each peaks band is a different size then we would need to normalize, especially since the quantiles are divided at the peaks level,
+#but since we are comparing between the same peaks quantile (the difference is the p-score quantiles) so we don't need to normalize
+#although we probably won't be able to compare between peaks quantiles. the purpose is only to see if any peaks quantile intersects more with any specific p-score
+#quantile not to compare between the peaks quantiles.
+#p-score - no need to normalize since the quantile division happens at the p-score level and they are all of size 1 bp, only after that contact bands are made.
+
 ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFintersections_plots,rearranged_rawData)
 {
 	#starting by clearing out all files from 'temp'
@@ -46,6 +59,7 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 	summer_all <- list() #this will contain all the entries (from each experiment data) of summing the values
 	summer_peaks_self_all <- list()
 	summer_ps_self_all <- list()
+	summer_peaksvsPscore_all <- list()
 	all_file_names <- rep(0,numOFexperiments) #this will contain the names of the chosen p-score files
 	translocated_flag <- -1 #this has 2 purposes: to let the function know if the current p-score file chosen is a translocation switched file (==1), and if there has previously (in the current run) been a usage of a p-score file that wasn't a translocation switched
 	first <- -1 #as long as first equals -1 we know there was no translocation removed
@@ -182,9 +196,19 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 					}
 					else
 					{
+						#note: i probably don't need this since it seems that there aren't any peaks with 0. i'm keeping it here just in case.
+						#asking if to not use all the peaks that are 0, this is important because when getting the quantiles it considers the 0 examples as well
+						#and since peaks of 0 could be considered as if there is no expression at all in those areas, then we might be able to remove them
+						#the user decided
+						#remZeropeaks <- readline(prompt=cat("\nshould peaks of 0 be removed?\ny/n\n\n"))
+
 						#importing the data from the file
 						#peaks <- read.table(paste("~/Analyze4C/ChIPseq/",file.name_peaks,sep=""))
 						peaks <- read.table(paste("~/Analyze4C/ChIPseq/peaks/",file.name_peaks,sep=""))
+						#if(remZeropeaks == "y") #removing all peakss that are 0 (since they are basically rna-seq reads that don't exist)
+						#{
+						#	peaks <- peaks[peaks[,4]>0,]	
+						#}	
 						break
 					}
 
@@ -194,7 +218,7 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 					#names(peaks) <- c("chr","first","last","peaks")
 				}
 			}
-
+						
 			#getting the p-score and peaks data by chromosome according to the request of the user, and also the chromosomes chosen
 			if(choice2 == 1) #all chromosomes
 			{
@@ -213,7 +237,7 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 			else if(choice2 == 3) #cis
 			{
 				ps_dat <- ps[ps[,1] == cis,]
-				peaks_dat <- peaks[peaks[,1] == cis,]			
+				peaks_dat <- peaks[peaks[,1] == cis,]	
 				chroms <- cis
 				int_chroms <- "cis" #this will be entered later in 'ChIPseqVScontacts_sumOFintersections_plots.txt'
 			}
@@ -221,7 +245,7 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 			{
 				chr_chosen <- as.integer(readline(prompt=cat("\nchoose a chromosome you would like to use:\n\n")))
 				ps_dat <- ps[ps[,1] == chr_chosen,]
-				peaks_dat <- peaks[peaks[,1] == chr_chosen,]			
+				peaks_dat <- peaks[peaks[,1] == chr_chosen,]	
 				chroms <- chr_chosen
 				int_chroms <- paste("chr",chr_chosen,sep="") #this will be entered later in 'ChIPseqVScontacts_sumOFintersections_plots.txt'
 			}
@@ -518,6 +542,23 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 			}		
 		}
 		
+		#venn diagram parameters
+		if(z == 1)
+		{
+			cat("\nvenn diagram parameters:\n\n")
+			venn_ans1 <- readline(prompt=cat("\nwould you like to consider overlaps to be only those that intersect more than 1 bp?\ny/n\n\n"))
+			if(venn_ans1 == "y")
+			{
+				ovlp_cov <- as.numeric(readline(prompt=cat("\nenter the minimum overlap coverage that will be considered an intersection? (between 0 and 1)\n\n")))
+				
+				venn_ans2 <- readline(prompt=cat("\nyou have chosen to accept an intersection only if there is at least",ovlp_cov,"overlap.\nwould you consider accepting an intersection if there is more than a certain amount of reads that intersect (e.g. if you there are more than an x amount of reads intersected, even though each one doesn't overlap more than",ovlp_cov,", altogether they are sufficient enough to be considered as an overlap)\ny/n\n\n"))
+				if(venn_ans2 == "y")
+				{
+					ovlp_num <- as.integer(readline(prompt=cat("\nhow many reads (minimum) intersected will be considered as an overlap?\n\n")))
+				}
+			}
+		}
+		
 		#intersecting and comparing the data from the contacts and peaks ranges of the same quantile
 		{					
 			#intersecting the rest of the quantile ranges
@@ -563,22 +604,6 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 			
 			quant_name <- "0%"
 			intersections_names <- c(intersections_names,quant_name)
-
-			if(z == 1)
-			{
-				cat("\nvenn diagram parameters:\n\n")
-				venn_ans1 <- readline(prompt=cat("\nwould you like to consider overlaps to be only those that intersect more than 1 bp?\ny/n\n\n"))
-				if(venn_ans1 == "y")
-				{
-					ovlp_cov <- as.numeric(readline(prompt=cat("\nenter the minimum overlap coverage that will be considered an intersection? (between 0 and 1)\n\n")))
-					
-					venn_ans2 <- readline(prompt=cat("\nyou have chosen to accept an intersection only if there is at least",ovlp_cov,"overlap.\nwould you consider accepting an intersection if there is more than a certain amount of reads that intersect (e.g. if you there are more than an x amount of reads intersected, even though each one doesn't overlap more than",ovlp_cov,", altogether they are sufficient enough to be considered as an overlap)\ny/n\n\n"))
-					if(venn_ans2 == "y")
-					{
-						ovlp_num <- as.integer(readline(prompt=cat("\nhow many reads (minimum) intersected will be considered as an overlap?\n\n")))
-					}
-				}
-			}
 			
 			for(n in 1:numOfquants)
 			{
@@ -623,6 +648,33 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 			names(intersections) <- intersections_names #giving each member of list the corresponding quantile
 			names(peaks_self) <- intersections_names #giving each member of list the corresponding quantile
 			names(ps_self) <- intersections_names #giving each member of list the corresponding quantile
+
+			#i need to do the same thing below except by counting the number of reads of peaks not bps (for this i will also need to count separately the number of self peaks, which is basically just the number of rows in the peaks data):
+			#this will contain all the intersections, each member of list is a list of the different intersections
+			#the structure [[x]][[y]] - x refers to the peaks quantiles, y to the p-score quantiles.
+			intersections_peaksvsPscore <- list()
+
+			b <- 0
+			for(ii in c(0,quant_percentages)*100)
+			{
+				b <- b + 1
+				intersections_peaksvsPscore[[b]] <- list()
+				m <- 0
+				for(jj in c(0,quant_percentages)*100)
+				{
+					m <- m + 1
+					system(paste("bedtools intersect -a ~/Analyze4C/temp/peaks_",ii,"per.bed -b ~/Analyze4C/temp/ps_conts_",jj,"per.bed -wo > ~/Analyze4C/temp/peaks_VS_contacts_",ii,"per",jj,"per.bed",sep=""))
+					if(file.info(paste("~/Analyze4C/temp/peaks_VS_contacts_",ii,"per",jj,"per.bed",sep=""))$size != 0)
+					{
+						intersections_peaksvsPscore[[b]][[m]] <- read.table(paste("~/Analyze4C/temp/peaks_VS_contacts_",ii,"per",jj,"per.bed",sep=""))
+					}
+					else
+					{
+						intersections_peaksvsPscore[[b]][[m]] <- data.frame(0,0,0,0,0,0,0,0)
+					}
+				}
+			}
+			names(intersections_peaksvsPscore) <- intersections_names #giving each member of list the corresponding quantile i might not use this!
 			
 			#ask if to sum the values per whole genome, per trans, or per chromosome
 			if(z == 1)
@@ -637,13 +689,17 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 				summer_peaks_self <- matrix(NA,nrow=1,ncol=(numOfquants+1))
 				summer_ps_self <- matrix(NA,nrow=1,ncol=(numOfquants+1))
 				
+				#the rows refer to the peaks quantiles, the columns to the p-score quantiles
+				summer_peaksvsPscore <- matrix(NA,nrow=(numOfquants+1),ncol=(numOfquants+1))
+				
 				colnames(summer) <- intersections_names
 				colnames(summer_peaks_self) <- intersections_names
 				colnames(summer_ps_self) <- intersections_names
+				colnames(summer_peaksvsPscore) <- intersections_names
 				
 				if(z == 1)
 				{
-					choice5 <- as.integer(readline(prompt=cat("\nwhat chromosomes should be summed? (enter the option number)\n1) whole genome\n2) trans\n3) cis\n4) each chromosome separately\n\n")))
+					choice5 <- as.integer(readline(prompt=cat("\nwhat chromosomes should be summed? (enter the option number)\n1) whole genome\n2) trans\n3) cis\n4) a specific chromosome\n\n")))
 				}
 				
 				if(choice5 == 1) #whole genome
@@ -653,6 +709,10 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 						summer[g] <- sum(intersections[[g]][8])
 						summer_peaks_self[g] <- sum(peaks_self[[g]][9])
 						summer_ps_self[g] <- sum(ps_self[[g]][7])
+						for(ff in 1:(numOfquants+1))
+						{
+							summer_peaksvsPscore[g,ff] <- sum(intersections_peaksvsPscore[[g]][[ff]][8])
+						}						
 					}
 					summed_chr <- "all" #this will be entered later in 'ChIPseqVScontacts_sumOFintersections_plots.txt'
 				}
@@ -663,6 +723,10 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 						summer[g] <- sum(intersections[[g]][intersections[[g]][,1]!=cis,8])
 						summer_peaks_self[g] <- sum(peaks_self[[g]][peaks_self[[g]][,1]!=cis,9])
 						summer_ps_self[g] <- sum(ps_self[[g]][ps_self[[g]][,1]!=cis,7])
+						for(ff in 1:(numOfquants+1))
+						{
+							summer_peaksvsPscore[g,ff] <- sum(intersections_peaksvsPscore[[g]][[ff]][intersections_peaksvsPscore[[g]][[ff]][,1]!=cis,8])
+						}						
 					}
 					summed_chr <- "trans" #this will be entered later in 'ChIPseqVScontacts_sumOFintersections_plots.txt'							
 				}
@@ -673,122 +737,86 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 						summer[g] <- sum(intersections[[g]][intersections[[g]][,1]==cis,8])
 						summer_peaks_self[g] <- sum(peaks_self[[g]][peaks_self[[g]][,1]==cis,9])
 						summer_ps_self[g] <- sum(ps_self[[g]][ps_self[[g]][,1]==cis,7])
+						for(ff in 1:(numOfquants+1))
+						{
+							summer_peaksvsPscore[g,ff] <- sum(intersections_peaksvsPscore[[g]][[ff]][intersections_peaksvsPscore[[g]][[ff]][,1]==cis,8])
+						}						
 					}
 					summed_chr <- "cis" #this will be entered later in 'ChIPseqVScontacts_sumOFintersections_plots.txt'		
 				}
-				else if(choice5 == 4) #each chromosome separately
+				else if(choice5 == 4) #specific chromosome
 				{
-					summer <- matrix(NA,nrow=numOFchroms,ncol=(numOfquants+1))
-					summer_peaks_self <- matrix(NA,nrow=numOFchroms,ncol=(numOfquants+1))
-					summer_ps_self <- matrix(NA,nrow=numOFchroms,ncol=(numOfquants+1))
-
-					for(d in 1:numOFchroms)
+					chosen_chrom <- as.integer(readline(prompt=cat("\nenter the chromosome number of choice:\n\n")))				
+					for(g in 1:(numOfquants+1))
 					{
-						for(g in 1:(numOfquants+1))
+						summer[g] <- sum(intersections[[g]][intersections[[g]][,1]==chosen_chrom,8])
+						summer_peaks_self[g] <- sum(peaks_self[[g]][peaks_self[[g]][,1]==chosen_chrom,9])
+						summer_ps_self[g] <- sum(ps_self[[g]][ps_self[[g]][,1]==chosen_chrom,7])
+						for(ff in 1:(numOfquants+1))
 						{
-							summer[d,g] <- sum(intersections[[g]][intersections[[g]][,1]==d,8])
-							summer_peaks_self[d,g] <- sum(peaks_self[[g]][peaks_self[[g]][,1]==d,9])
-							summer_ps_self[d,g] <- sum(ps_self[[g]][ps_self[[g]][,1]==d,7])
-						}
+							summer_peaksvsPscore[g,ff] <- sum(intersections_peaksvsPscore[[g]][[ff]][intersections_peaksvsPscore[[g]][[ff]][,1]==chosen_chrom,8])
+						}						
 					}
-					summer <- data.frame(summer)
-					colnames(summer) <- intersections_names
-					rownames(summer) <- c(1:numOFchroms)						
-					print(summer)
-					
-					summer_peaks_self <- data.frame(summer_peaks_self)
-					colnames(summer_peaks_self) <- intersections_names
-					rownames(summer_peaks_self) <- c(1:numOFchroms)						
-					print(summer_peaks_self)
-					
-					summer_ps_self <- data.frame(summer_ps_self)
-					colnames(summer_ps_self) <- intersections_names
-					rownames(summer_ps_self) <- c(1:numOFchroms)						
-					print(summer_ps_self)
-					
-					summed_chr <- "each separate" #this will be entered later in 'ChIPseqVScontacts_sumOFintersections_plots.txt'
+					summed_chr <- paste("chromosome",chosen_chrom) #this will be entered later in 'ChIPseqVScontacts_sumOFintersections_plots.txt'	
 				}
 				
 				summer_all[[z]] <- summer
 				summer_peaks_self_all[[z]] <- summer_peaks_self
 				summer_ps_self_all[[z]] <- summer_ps_self
+				summer_peaksvsPscore_all[[z]] <- summer_peaksvsPscore								
 			}
 			else if(choice4 == 2) #i need to fill this with other actions
 			{
-			
+				cat("\nsorry, this choice is currently unavailable\n\n")
 			}	
 		}
 
-	#filling in the data for the venn diagrams	
-	{
-		if(quant_percentages[1] != 0)
+		#filling in the data for the venn diagrams	
 		{
-			venn_quants <- c(0,quant_percentages)
-		}
-		else
-		{
-			venn_quants <- quant_percentages
-		}
-
-		ind_count <- 0
-		for(m in (venn_quants)*100)
-		{	
-			ind_count <- ind_count + 1
-			if(venn_ans1 == "y")
+			if(quant_percentages[1] != 0)
 			{
-				system(paste("bedtools intersect -a ~/Analyze4C/temp/peaks_",m,"per.bed -b ~/Analyze4C/temp/ps_conts_",m,"per.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_",m,"per_A.bed",sep=""))
-				venn_A <- read.table(paste("~/Analyze4C/temp/venn_",m,"per_A.bed",sep=""))
-				if(venn_ans2 == "y")
-				{
-					system(paste("bedtools intersect -a ~/Analyze4C/temp/peaks_",m,"per.bed -b ~/Analyze4C/temp/ps_conts_",m,"per.bed -c > ~/Analyze4C/temp/venn_",m,"per_B.bed",sep=""))
-					venn_B <- read.table(paste("~/Analyze4C/temp/venn_",m,"per_B.bed",sep=""))
-					#if the number in the 1st is 0 but the number in the 2nd is more than ovlp_num then we will consider it to be 1
-					venn_A[venn_B[,5]>=ovlp_num,5] <- 1
-				}
-				#add the correct number to venn_col_num rows
-#i need to collect the data differently into venn_DF, collect the actual indices that have 1, and turn them into a one string, and then list them together (instead of columns in a data frame)
-# and then use calculate.overlap
-				#venn_DF[[ind_count]][[venn_col_num]] <- as.character(paste(venn_A[venn_A[,5] == 1,1:3][,1],venn_A[venn_A[,5] == 1,1:3][,2],venn_A[venn_A[,5] == 1,1:3][,3]))			
-				venn_DF[[ind_count]][venn_A[,5]>=1,venn_col_num] <- 1
+				venn_quants <- c(0,quant_percentages)
 			}
 			else
 			{
-				system(paste("bedtools intersect -a ~/Analyze4C/temp/peaks_",m,"per.bed -b ~/Analyze4C/temp/ps_conts_",m,"per.bed -c > ~/Analyze4C/temp/venn_",m,"per.bed",sep=""))
-				venn <- read.table(paste("~/Analyze4C/temp/venn_",m,"per.bed",sep=""))
-				#venn_DF[[ind_count]][[venn_col_num]] <- as.character(paste(venn[venn[,5] == 1,1:3][,1],venn[venn[,5] == 1,1:3][,2],venn[venn[,5] == 1,1:3][,3]))			
-				#add the correct number to venn_col_num rows
-				venn_DF[[ind_count]][venn[,5]>=1,venn_col_num] <- 1	
-			}			
+				venn_quants <- quant_percentages
+			}
+
+			ind_count <- 0
+			for(m in (venn_quants)*100)
+			{	
+				ind_count <- ind_count + 1
+				if(venn_ans1 == "y")
+				{
+					system(paste("bedtools intersect -a ~/Analyze4C/temp/peaks_",m,"per.bed -b ~/Analyze4C/temp/ps_conts_",m,"per.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_",m,"per_A.bed",sep=""))
+					venn_A <- read.table(paste("~/Analyze4C/temp/venn_",m,"per_A.bed",sep=""))
+					if(venn_ans2 == "y")
+					{
+						system(paste("bedtools intersect -a ~/Analyze4C/temp/peaks_",m,"per.bed -b ~/Analyze4C/temp/ps_conts_",m,"per.bed -c > ~/Analyze4C/temp/venn_",m,"per_B.bed",sep=""))
+						venn_B <- read.table(paste("~/Analyze4C/temp/venn_",m,"per_B.bed",sep=""))
+						#if the number in the 1st is 0 but the number in the 2nd is more than ovlp_num then we will consider it to be 1
+						venn_A[venn_B[,5]>=ovlp_num,5] <- 1
+					}
+					#add the correct number to venn_col_num rows
+					#i need to collect the data differently into venn_DF, collect the actual indices that have 1, and turn them into a one string, and then list them together (instead of columns in a data frame)
+					# and then use calculate.overlap
+					#venn_DF[[ind_count]][[venn_col_num]] <- as.character(paste(venn_A[venn_A[,5] == 1,1:3][,1],venn_A[venn_A[,5] == 1,1:3][,2],venn_A[venn_A[,5] == 1,1:3][,3]))			
+					venn_DF[[ind_count]][venn_A[,5]>=1,venn_col_num] <- 1
+				}
+				else
+				{
+					system(paste("bedtools intersect -a ~/Analyze4C/temp/peaks_",m,"per.bed -b ~/Analyze4C/temp/ps_conts_",m,"per.bed -c > ~/Analyze4C/temp/venn_",m,"per.bed",sep=""))
+					venn <- read.table(paste("~/Analyze4C/temp/venn_",m,"per.bed",sep=""))
+					#venn_DF[[ind_count]][[venn_col_num]] <- as.character(paste(venn[venn[,5] == 1,1:3][,1],venn[venn[,5] == 1,1:3][,2],venn[venn[,5] == 1,1:3][,3]))			
+					#add the correct number to venn_col_num rows
+					venn_DF[[ind_count]][venn[,5]>=1,venn_col_num] <- 1	
+				}			
+			}
 		}
-	}
 		
 		#removing the files from 'temp' folder
-		{
-			#removing first the range that begins with 0%
-			#system(paste("rm ~/Analyze4C/temp/ps_conts_0per.bed",sep=""))
-			#system(paste("rm ~/Analyze4C/temp/peaks_0per.bed",sep=""))
-			#system(paste("rm ~/Analyze4C/temp/peaks_VS_contacts_0per.bed",sep=""))
-			
-			#removing the rest of the range files
-			#for(m in 1:numOfquants)
-			#{
-			#	quant <- quant_percentages[m]*100 #getting the specific quantile in percentage (no fraction)
-			#	system(paste("rm ~/Analyze4C/temp/ps_conts_",quant,"per.bed",sep=""))
-			#	system(paste("rm ~/Analyze4C/temp/peaks_",quant,"per.bed",sep=""))
-			#	#system(paste("rm ~/Analyze4C/temp/peaks_VS_contacts_",quant,"per.bed",sep=""))
-			#}
-			
-			#removing the intersection files
-			#system(paste("rm ~/Analyze4C/temp/peaks_VS_contacts_0per.bed",sep=""))
-			#for(n in 1:numOfquants)
-			#{
-			#	quant <- quant_percentages[n]*100 #getting the specific quantile in percentage (no fraction)
-			#	system(paste("rm ~/Analyze4C/temp/peaks_VS_contacts_",quant,"per.bed",sep=""))
-			#}
-			
-			#system("rm ~/Analyze4C/temp/ps_dat_temp.sgr")
-			system("rm ~/Analyze4C/temp/*")
-		}	
+		system("rm ~/Analyze4C/temp/*")
+
 		#i might want to take the last column of the intersection files (column 7, these are the number of bp that intersect), and sum them.
 		#then compare this number and the number we get with other experiments
 	}		
@@ -796,11 +824,14 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 	names(summer_all) <- all_file_names #adding the names of the files to the list, each 'summer' will get the name of the corresponding file
 	names(summer_peaks_self_all) <- all_file_names #adding the names of the files to the list, each 'summer_peaks_self_all' will get the name of the corresponding file
 	names(summer_ps_self_all) <- all_file_names #adding the names of the files to the list, each 'summer_ps_self_all' will get the name of the corresponding file
+	names(summer_peaksvsPscore_all) <- all_file_names #adding the names of the files to the list, each 'summer_peaksvsPscore' will get the name of the corresponding file
 
 	#create plots:		
 	peaks_dataframe <- c()
 	ps_dataframe <- c()
 	exp_names <- c() #contains the names given by user to each example
+	peaksvsPscore_dataframe <- list()
+	peaksvsPscore_wUnintersected <- list()
 	
 	for(h in 1:z)
 	{
@@ -808,7 +839,18 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 		exp_names <- c(exp_names,exp_name)
 		peaks_per <- summer_all[[h]]/summer_peaks_self_all[[h]]
 		ps_per <- summer_all[[h]]/summer_ps_self_all[[h]]
+
+		#creating a matrix with all the intersections including the ones that didn't intersect
+		peaksvsPscore_wUnintersected_temp <- c()
+		for(a in 1:(numOfquants+1))
+		{
+		#	peaksvsPscore_per[[h]][a,] <- summer_peaksvsPscore_all[[h]][a,]/summer_peaks_self_all[[h]][a]
+			peaksvsPscore_wUnintersected_temp <- rbind(peaksvsPscore_wUnintersected_temp,c(summer_peaksvsPscore_all[[h]][a,],summer_peaks_self_all[[h]][a]-sum(summer_peaksvsPscore_all[[h]][a,])))
+		}
+		colnames(peaksvsPscore_wUnintersected_temp)[numOfquants+2] <- "peaks_bps_not_intersected"
+		peaksvsPscore_wUnintersected[[h]] <- peaksvsPscore_wUnintersected_temp
 		
+		#creating the ranges names for each quantile		
 		percentages_peaks <- c()
 		for(a in 1:(length(colnames(peaks_per))-1))
 		{
@@ -822,6 +864,7 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 		names(peaks_dataframe_temp) <- c("quantile_range","per","experiment")
 		peaks_dataframe <- rbind(peaks_dataframe,peaks_dataframe_temp)
 		
+		#creating the ranges names for each quantile
 		percentages_ps <- c()
 		for(a in 1:(length(colnames(ps_per))-1))
 		{
@@ -834,6 +877,32 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 		ps_dataframe_temp <- data.frame(percentages_ps,as.numeric(t(ps_per)),rep(exp_name,nrow(ps_per)))
 		names(ps_dataframe_temp) <- c("quantile_range","per","experiment")
 		ps_dataframe <- rbind(ps_dataframe,ps_dataframe_temp)
+
+		#creating the ranges names for each quantile			
+		ranges_peaksvsPscore <- c()	
+		for(xx in 1:length(percentages_peaks))
+		{	
+			for(yy in 1:length(percentages_peaks))
+			{
+				ranges_peaksvsPscore_temp <- paste(percentages_peaks[xx]," peaks X ",percentages_peaks[yy]," p-score",sep="")
+				ranges_peaksvsPscore <- c(ranges_peaksvsPscore,ranges_peaksvsPscore_temp)
+			}
+			ranges_peaksvsPscore <- c(ranges_peaksvsPscore,"peaks_bps_not_intersected")
+		}	
+
+		#list of lists - z elements in first list and number quants for second
+		peaksvsPscore_dataframe_temp <- list()
+		aa <- 1
+		bb <- 1
+		for(b in 1:(numOfquants+1))
+		{
+			cc <- aa * (numOfquants+2)
+			peaksvsPscore_dataframe_temp[[b]] <- data.frame(ranges_peaksvsPscore[bb:cc],as.numeric(t(peaksvsPscore_wUnintersected[[h]][b,])),rep(exp_name,length(peaksvsPscore_wUnintersected[[h]][b,])))
+			names(peaksvsPscore_dataframe_temp[[b]]) <- c("peaks_quantile_X_pScore_quantile","bps_intersected","experiment")
+			bb <- bb + (numOfquants+2)
+			aa <- aa + 1			
+		}
+		peaksvsPscore_dataframe[[h]] <- peaksvsPscore_dataframe_temp		
 	}
 
 	#getting the date and time
@@ -841,6 +910,43 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 	DandT2 <- gsub(" ","_",DandT1)
 	DandT2 <- gsub(":","",DandT2)
 
+	#creating plots that compare each peaks quartile with all the quartiles of the p-scores
+	cat("\npeaks quantile vs. p-score quantiles plots:\n\n")
+	save_flag <- 0
+	for(p1 in 1:z)
+	{
+		for(p2 in 1:(numOfquants+1))
+		{
+			#create a bar chart without the rest of the peakss that didn't intersect 
+			peaksvsPscore_temp2 <- peaksvsPscore_dataframe[[p1]][[p2]][-(numOfquants+2),]
+			peaksvsPscore_temp2$bps_intersected <- (peaksvsPscore_temp2$bps_intersected/summer_peaks_self_all[[p1]][p2])*100		
+			peaksvsPscore_bar <- ggplot2::ggplot(peaksvsPscore_temp2, ggplot2::aes(x=peaks_quantile_X_pScore_quantile,y=bps_intersected,fill=peaks_quantile_X_pScore_quantile)) + ggplot2::geom_bar(position = "dodge",stat = "identity") + ggplot2::ggtitle("peaks quantile VS. p-score quantiles - percentage bar chart") + ggplot2::labs(x="peaks quantile VS. p-score quantile",y="(intersections(bp)/peaks(bp))*100 (%)") + ggplot2::theme(plot.title = ggplot2::element_text(size=15))
+			cat("\ncreating plot\nplease wait...\n\n")
+			print(peaksvsPscore_bar)
+			if(readline("\nwould you like to save this plot?\ny/n\n\n") == "y")
+			{
+				wd <- as.numeric(readline(prompt=cat("\nenter the width size of the plot:\n\n")))
+				ht <- as.numeric(readline(prompt=cat("\nenter the height size of the plot:\n\n")))	
+				peaksvsPscore_barPlot_name <- paste("~/Analyze4C/plots/expressionVScontacts_peaksquantileVSpScorequantiles_bars_file",p1,"_",DandT2,".png",sep="")
+				ggplot2::ggsave(peaksvsPscore_barPlot_name,width=wd,height=ht)
+				save_flag <- 1
+			}
+
+			#create a pie chart with the rest of the peakss that didn't intersect
+			peaksvsPscore_pie <- ggplot2::ggplot(peaksvsPscore_dataframe[[p1]][[p2]], ggplot2::aes(x="",y=bps_intersected,fill=peaks_quantile_X_pScore_quantile)) + ggplot2::geom_bar(stat = "identity") + ggplot2::ggtitle("peaks quantile VS. p-score quantiles - intersections pie chart") + ggplot2::theme(plot.title = ggplot2::element_text(size=15)) + ggplot2::coord_polar("y")
+			cat("\ncreating plot\nplease wait...\n\n")
+			print(peaksvsPscore_pie)
+			if(readline("\nwould you like to save this plot?\ny/n\n\n") == "y")
+			{
+				wd <- as.numeric(readline(prompt=cat("\nenter the width size of the plot:\n\n")))
+				ht <- as.numeric(readline(prompt=cat("\nenter the height size of the plot:\n\n")))	
+				peaksvsPscore_piePlot_name <- paste("~/Analyze4C/plots/expressionVScontacts_peaksquantileVSpScorequantiles_pieChart_file",p1,"_",DandT2,".png",sep="")
+				ggplot2::ggsave(peaksvsPscore_piePlot_name,width=wd,height=ht)
+				save_flag <- 1
+			}
+		}
+	}
+	
 	#creating a plot
 	peaks_plot <- ggplot2::ggplot(peaks_dataframe, ggplot2::aes(x=quantile_range,y=per,fill=experiment)) + ggplot2::geom_bar(position = "dodge",stat = "identity") + ggplot2::ggtitle("ratio of contact intersections with peaks and all peaks") + ggplot2::labs(x="quantile (%)",y="intersections(bp)/peaks(bp)") + ggplot2::theme(plot.title = ggplot2::element_text(size=15))	
 	if(numOFexperiments == 2) #this comparison will only work if there are 2 experiments, if there is a different number then we can plot the data but not show significance
@@ -1034,7 +1140,7 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 	}
 	
 	#recording the data into 'ChIPseqVScontacts_sumOFintersections_plots.txt'
-	if(choice6 == "y" | choice7 == "y" | venn_flag == 1)
+	if(choice6 == "y" | choice7 == "y" | venn_flag == 1 | save_flag == 1)
 	{
 		#saving the parameters and details to ChIPseqVScontacts_sumOFintersections_plots.txt
 		ChIPseqVScontacts_sumOFintersections_plots[nrow(ChIPseqVScontacts_sumOFintersections_plots)+1,] <- c(DandT1,file.name_peaks,numOFexperiments,exps,int_chroms,summed_chr,RE_gap,bp_gap,quant_source,value_source)

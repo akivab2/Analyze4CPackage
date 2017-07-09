@@ -59,8 +59,17 @@ rnaSeqCorContacts <- function(Experiments_4C,rearranged_rawData,expressionVScont
 			}
 			else
 			{
+				#asking if to not use all the FPKMs that are 0, this is important because when getting the quantiles it considers the 0 examples as well
+				#and since FPKMs of 0 could be considered as if there is no expression at all in those areas, then we might be able to remove them
+				#the user decided
+				remZeroFPKM <- readline(prompt=cat("\nshould FPKM's of 0 be removed?\ny/n\n\n"))
+
 				#importing the data from the file
 				FPKM <- read.table(paste("~/Analyze4C/RNAseq/FPKM/",file.name_FPKM,sep=""))
+				if(remZeroFPKM == "y") #removing all FPKMs that are 0 (since they are basically rna-seq reads that don't exist)
+				{
+					FPKM <- FPKM[FPKM[,4]>0,]
+				}				
 				break
 			}
 
@@ -76,7 +85,8 @@ rnaSeqCorContacts <- function(Experiments_4C,rearranged_rawData,expressionVScont
 	}
 	else
 	{
-		#choosing one p-score file
+
+	#choosing one p-score file
 		repeat
 		{
 			choice3 <- as.integer(readline(prompt=cat("\nwhat folder of p-score files would you like to choose from? (enter the number)\n1) no bp windows\n2) with bp windows\n\n")))
@@ -226,8 +236,17 @@ rnaSeqCorContacts <- function(Experiments_4C,rearranged_rawData,expressionVScont
 				}
 				else
 				{
+					#asking if to not use all the FPKMs that are 0, this is important because when getting the quantiles it considers the 0 examples as well
+					#and since FPKMs of 0 could be considered as if there is no expression at all in those areas, then we might be able to remove them
+					#the user decided
+					remZeroFPKM <- readline(prompt=cat("\nshould FPKM's of 0 be removed?\ny/n\n\n"))
+				
 					#importing the data from the file
 					FPKM <- read.table(paste("~/Analyze4C/RNAseq/FPKM/",file.name_FPKM,sep=""))
+					if(remZeroFPKM == "y") #removing all FPKMs that are 0 (since they are basically rna-seq reads that don't exist)
+					{
+						FPKM <- FPKM[FPKM[,4]>0,]
+					}					
 					break
 				}
 

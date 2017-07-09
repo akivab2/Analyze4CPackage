@@ -16,6 +16,19 @@
 
 #this function also returns a venn diagram of the contact bands that intersect with the FPKM data
 
+#lastly, the function compares between each quantile of FPKM and all the quantiles of p-score
+#this comparison is important since in order to determine if there is a correlation between the quantile of FPKM and quantile of contacts
+#we need to compare each quantile with others. if we see that compared to the others we get more intersections then we can begin to conclude that there might be some correlation
+#visually a bar plot with the percentages of intersections are created for each FPKM quantile separately (the percentage of intersections is out of all bps in that specific FPKM quantile) - this is to see how different or similar each quantile is from each other
+#and a pie chart is also created in order to view the how many FPKM bps are intersected with each p-score quantile, in comparison to the bps that didn't intersect  - this is to see how much intersected compared to not
+
+#note:
+#FPKM - you might think that since each FPKM band is a different size then we would need to normalize, especially since the quantiles are divided at the FPKM level,
+#but since we are comparing between the same FPKM quantile (the difference is the p-score quantiles) so we don't need to normalize
+#although we probably won't be able to compare between FPKM quantiles. the purpose is only to see if any FPKM quantile intersects more with any specific p-score
+#quantile not to compare between the FPKM quantiles.
+#p-score - no need to normalize since the quantile division happens at the p-score level and they are all of size 1 bp, only after that contact bands are made.
+
 rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOFintersections_plots,rearranged_rawData)
 {
 	#starting by clearing out all files from 'temp'
@@ -47,6 +60,7 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 	summer_all <- list() #this will contain all the entries (from each experiment data) of summing the values
 	summer_FPKM_self_all <- list()
 	summer_ps_self_all <- list()
+	summer_FPKMvsPscore_all <- list()
 	all_file_names <- rep(0,numOFexperiments) #this will contain the names of the chosen p-score files
 	translocated_flag <- -1 #this has 2 purposes: to let the function know if the current p-score file chosen is a translocation switched file (==1), and if there has previously (in the current run) been a usage of a p-score file that wasn't a translocation switched
 	first <- -1 #as long as first equals -1 we know there was no translocation removed
@@ -183,9 +197,18 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 					}
 					else
 					{
-						#importing the data from the file
+						#asking if to not use all the FPKMs that are 0, this is important because when getting the quantiles it considers the 0 examples as well
+						#and since FPKMs of 0 could be considered as if there is no expression at all in those areas, then we might be able to remove them
+						#the user decided
+						remZeroFPKM <- readline(prompt=cat("\nshould FPKM's of 0 be removed?\ny/n\n\n"))
+						
+						#importing the data from the 
 						#FPKM <- read.table(paste("~/Analyze4C/RNAseq/",file.name_FPKM,sep=""))
-						FPKM <- read.table(paste("~/Analyze4C/RNAseq/FPKM/",file.name_FPKM,sep=""))
+						FPKM <- read.table(paste("~/Analyze4C/RNAseq/FPKM/",file.name_FPKM,sep=""))						
+						if(remZeroFPKM == "y") #removing all FPKMs that are 0 (since they are basically rna-seq reads that don't exist)
+						{
+							FPKM <- FPKM[FPKM[,4]>0,]
+						}
 						break
 					}
 
@@ -195,26 +218,26 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 					#names(FPKM) <- c("chr","first","last","FPKM")
 				}
 			}
-
+			
 			#getting the p-score and FPKM data by chromosome according to the request of the user, and also the chromosomes chosen
 			if(choice2 == 1) #all chromosomes
 			{
 				ps_dat <- ps
-				FPKM_dat <- FPKM
+				FPKM_dat <- FPKM	
 				chroms <- c(1:numOFchroms)
 				int_chroms <- "all" #this will be entered later in 'expressionVScontacts_sumOFintersections_plots.txt'
 			}
 			else if(choice2 == 2) #trans
 			{
 				ps_dat <- ps[ps[,1] != cis,]
-				FPKM_dat <- FPKM[FPKM[,1] != cis,]
+				FPKM_dat <- FPKM[FPKM[,1] != cis,]			
 				chroms <- Filter(function(x) x!=cis,1:numOFchroms) #this here excludes cis chromosome number in the sequence, another way would be - (1:numOFchroms)[-cis]
 				int_chroms <- "trans" #this will be entered later in 'expressionVScontacts_sumOFintersections_plots.txt'
 			}
 			else if(choice2 == 3) #cis
 			{
 				ps_dat <- ps[ps[,1] == cis,]
-				FPKM_dat <- FPKM[FPKM[,1] == cis,]			
+				FPKM_dat <- FPKM[FPKM[,1] == cis,]	
 				chroms <- cis
 				int_chroms <- "cis" #this will be entered later in 'expressionVScontacts_sumOFintersections_plots.txt'
 			}
@@ -222,7 +245,7 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 			{
 				chr_chosen <- as.integer(readline(prompt=cat("\nchoose a chromosome you would like to use:\n\n")))
 				ps_dat <- ps[ps[,1] == chr_chosen,]
-				FPKM_dat <- FPKM[FPKM[,1] == chr_chosen,]			
+				FPKM_dat <- FPKM[FPKM[,1] == chr_chosen,]	
 				chroms <- chr_chosen
 				int_chroms <- paste("chr",chr_chosen,sep="") #this will be entered later in 'expressionVScontacts_sumOFintersections_plots.txt'
 			}
@@ -486,6 +509,23 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 				} 				
 			}		
 		}
+
+		#venn diagram parameters
+		if(z == 1) 
+		{ 
+			cat("\nvenn diagram parameters:\n\n") 
+			venn_ans1 <- readline(prompt=cat("\nwould you like to consider overlaps to be only those that intersect more than 1 bp?\ny/n\n\n")) 
+			if(venn_ans1 == "y") 
+			{ 
+				ovlp_cov <- as.numeric(readline(prompt=cat("\nenter the minimum overlap coverage that will be considered an intersection? (between 0 and 1)\n\n"))) 
+				
+				venn_ans2 <- readline(prompt=cat("\nyou have chosen to accept an intersection only if there is at least",ovlp_cov,"overlap.\nwould you consider accepting an intersection if there is more than a certain amount of reads that intersect (e.g. if you there are more than an x amount of reads intersected, even though each one doesn't overlap more than",ovlp_cov,", altogether they are sufficient enough to be considered as an overlap)\ny/n\n\n")) 
+				if(venn_ans2 == "y") 
+				{ 
+					ovlp_num <- as.integer(readline(prompt=cat("\nhow many reads (minimum) intersected will be considered as an overlap?\n\n"))) 
+				} 
+			} 
+		} 
 		
 		#intersecting and comparing the data from the contacts and FPKM ranges of the same quantile
 		{			
@@ -532,23 +572,7 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 			
 			quant_name <- "0%"
 			intersections_names <- c(intersections_names,quant_name)
-	
-			if(z == 1) 
-			{ 
-				cat("\nvenn diagram parameters:\n\n") 
-				venn_ans1 <- readline(prompt=cat("\nwould you like to consider overlaps to be only those that intersect more than 1 bp?\ny/n\n\n")) 
-				if(venn_ans1 == "y") 
-				{ 
-					ovlp_cov <- as.numeric(readline(prompt=cat("\nenter the minimum overlap coverage that will be considered an intersection? (between 0 and 1)\n\n"))) 
-					
-					venn_ans2 <- readline(prompt=cat("\nyou have chosen to accept an intersection only if there is at least",ovlp_cov,"overlap.\nwould you consider accepting an intersection if there is more than a certain amount of reads that intersect (e.g. if you there are more than an x amount of reads intersected, even though each one doesn't overlap more than",ovlp_cov,", altogether they are sufficient enough to be considered as an overlap)\ny/n\n\n")) 
-					if(venn_ans2 == "y") 
-					{ 
-						ovlp_num <- as.integer(readline(prompt=cat("\nhow many reads (minimum) intersected will be considered as an overlap?\n\n"))) 
-					} 
-				} 
-			} 
-	
+		
 			#if(quant_percentages[1] != 0)
 			#{
 			for(n in 1:numOfquants)
@@ -591,11 +615,38 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 				quant_name <- paste(quant,"%",sep="")
 				intersections_names <- c(intersections_names,quant_name)
 			}
-			#}
+			#}			
 			names(intersections) <- intersections_names #giving each member of list the corresponding quantile
 			names(FPKM_self) <- intersections_names #giving each member of list the corresponding quantile
 			names(ps_self) <- intersections_names #giving each member of list the corresponding quantile
 			
+			#i need to do the same thing below except by counting the number of reads of FPKM not bps (for this i will also need to count separately the number of self FPKM, which is basically just the number of rows in the FPKM data):
+			#this will contain all the intersections, each member of list is a list of the different intersections
+			#the structure [[x]][[y]] - x refers to the FPKM quantiles, y to the p-score quantiles.
+			intersections_FPKMvsPscore <- list()
+
+			b <- 0
+			for(ii in c(0,quant_percentages)*100)
+			{
+				b <- b + 1
+				intersections_FPKMvsPscore[[b]] <- list()
+				m <- 0
+				for(jj in c(0,quant_percentages)*100)
+				{
+					m <- m + 1
+					system(paste("bedtools intersect -a ~/Analyze4C/temp/FPKM_",ii,"per.bed -b ~/Analyze4C/temp/ps_conts_",jj,"per.bed -wo > ~/Analyze4C/temp/FPKM_VS_contacts_",ii,"per",jj,"per.bed",sep=""))
+					if(file.info(paste("~/Analyze4C/temp/FPKM_VS_contacts_",ii,"per",jj,"per.bed",sep=""))$size != 0)
+					{
+						intersections_FPKMvsPscore[[b]][[m]] <- read.table(paste("~/Analyze4C/temp/FPKM_VS_contacts_",ii,"per",jj,"per.bed",sep=""))
+					}
+					else
+					{
+						intersections_FPKMvsPscore[[b]][[m]] <- data.frame(0,0,0,0,0,0,0,0)
+					}
+				}
+			}
+			names(intersections_FPKMvsPscore) <- intersections_names #giving each member of list the corresponding quantile i might not use this!
+
 			#ask if to sum the values per whole genome, per trans, or per chromosome
 			if(z == 1)
 			{
@@ -609,15 +660,19 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 				summer_FPKM_self <- matrix(NA,nrow=1,ncol=(numOfquants+1))
 				summer_ps_self <- matrix(NA,nrow=1,ncol=(numOfquants+1))
 				
+				#the rows refer to the FPKM quantiles, the columns to the p-score quantiles
+				summer_FPKMvsPscore <- matrix(NA,nrow=(numOfquants+1),ncol=(numOfquants+1))
+				
 				colnames(summer) <- intersections_names
 				colnames(summer_FPKM_self) <- intersections_names
 				colnames(summer_ps_self) <- intersections_names
+				colnames(summer_FPKMvsPscore) <- intersections_names
 				
 				if(z == 1)
 				{
-					choice5 <- as.integer(readline(prompt=cat("\nwhat chromosomes should be summed? (enter the option number)\n1) whole genome\n2) trans\n3) cis\n4) each chromosome separately\n\n")))
+					choice5 <- as.integer(readline(prompt=cat("\nwhat chromosomes should be summed? (enter the option number)\n1) whole genome\n2) trans\n3) cis\n4) a specific chromosome\n\n")))
 				}
-				
+
 				if(choice5 == 1) #whole genome
 				{
 					for(g in 1:(numOfquants+1))
@@ -625,6 +680,10 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 						summer[g] <- sum(intersections[[g]][8])
 						summer_FPKM_self[g] <- sum(FPKM_self[[g]][9])
 						summer_ps_self[g] <- sum(ps_self[[g]][7])
+						for(ff in 1:(numOfquants+1))
+						{
+							summer_FPKMvsPscore[g,ff] <- sum(intersections_FPKMvsPscore[[g]][[ff]][8])
+						}	
 					}
 					summed_chr <- "all" #this will be entered later in 'expressionVScontacts_sumOFintersections_plots.txt'
 				}
@@ -635,6 +694,10 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 						summer[g] <- sum(intersections[[g]][intersections[[g]][,1]!=cis,8])
 						summer_FPKM_self[g] <- sum(FPKM_self[[g]][FPKM_self[[g]][,1]!=cis,9])
 						summer_ps_self[g] <- sum(ps_self[[g]][ps_self[[g]][,1]!=cis,7])
+						for(ff in 1:(numOfquants+1))
+						{
+							summer_FPKMvsPscore[g,ff] <- sum(intersections_FPKMvsPscore[[g]][[ff]][intersections_FPKMvsPscore[[g]][[ff]][,1]!=cis,8])
+						}	
 					}
 					summed_chr <- "trans" #this will be entered later in 'expressionVScontacts_sumOFintersections_plots.txt'							
 				}
@@ -645,122 +708,86 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 						summer[g] <- sum(intersections[[g]][intersections[[g]][,1]==cis,8])
 						summer_FPKM_self[g] <- sum(FPKM_self[[g]][FPKM_self[[g]][,1]==cis,9])
 						summer_ps_self[g] <- sum(ps_self[[g]][ps_self[[g]][,1]==cis,7])
+						for(ff in 1:(numOfquants+1))
+						{
+							summer_FPKMvsPscore[g,ff] <- sum(intersections_FPKMvsPscore[[g]][[ff]][intersections_FPKMvsPscore[[g]][[ff]][,1]==cis,8])
+						}
 					}
 					summed_chr <- "cis" #this will be entered later in 'expressionVScontacts_sumOFintersections_plots.txt'		
 				}
-				else if(choice5 == 4) #each chromosome separately
+				else if(choice5 == 4) #specific chromosome
 				{
-					summer <- matrix(NA,nrow=numOFchroms,ncol=(numOfquants+1))
-					summer_FPKM_self <- matrix(NA,nrow=numOFchroms,ncol=(numOfquants+1))
-					summer_ps_self <- matrix(NA,nrow=numOFchroms,ncol=(numOfquants+1))
-
-					for(d in 1:numOFchroms)
+					chosen_chrom <- as.integer(readline(prompt=cat("\nenter the chromosome number of choice:\n\n")))
+					for(g in 1:(numOfquants+1))
 					{
-						for(g in 1:(numOfquants+1))
+						summer[g] <- sum(intersections[[g]][intersections[[g]][,1]==chosen_chrom,8])
+						summer_FPKM_self[g] <- sum(FPKM_self[[g]][FPKM_self[[g]][,1]==chosen_chrom,9])
+						summer_ps_self[g] <- sum(ps_self[[g]][ps_self[[g]][,1]==chosen_chrom,7])
+						for(ff in 1:(numOfquants+1))
 						{
-							summer[d,g] <- sum(intersections[[g]][intersections[[g]][,1]==d,8])
-							summer_FPKM_self[d,g] <- sum(FPKM_self[[g]][FPKM_self[[g]][,1]==d,9])
-							summer_ps_self[d,g] <- sum(ps_self[[g]][ps_self[[g]][,1]==d,7])
+							summer_FPKMvsPscore[g,ff] <- sum(intersections_FPKMvsPscore[[g]][[ff]][intersections_FPKMvsPscore[[g]][[ff]][,1]==chosen_chrom,8])
 						}
 					}
-					summer <- data.frame(summer)
-					colnames(summer) <- intersections_names
-					rownames(summer) <- c(1:numOFchroms)						
-					print(summer)
-					
-					summer_FPKM_self <- data.frame(summer_FPKM_self)
-					colnames(summer_FPKM_self) <- intersections_names
-					rownames(summer_FPKM_self) <- c(1:numOFchroms)						
-					print(summer_FPKM_self)
-					
-					summer_ps_self <- data.frame(summer_ps_self)
-					colnames(summer_ps_self) <- intersections_names
-					rownames(summer_ps_self) <- c(1:numOFchroms)						
-					print(summer_ps_self)
-					
-					summed_chr <- "each separate" #this will be entered later in 'expressionVScontacts_sumOFintersections_plots.txt'
+					summed_chr <- paste("chromosome",chosen_chrom) #this will be entered later in 'expressionVScontacts_sumOFintersections_plots.txt'						
 				}
 				
 				summer_all[[z]] <- summer
 				summer_FPKM_self_all[[z]] <- summer_FPKM_self
 				summer_ps_self_all[[z]] <- summer_ps_self
+				summer_FPKMvsPscore_all[[z]] <- summer_FPKMvsPscore				
 			}
 			else if(choice4 == 2) #i need to fill this with other actions
 			{
-			
+				cat("\nsorry, this choice is currently unavailable\n\n")
 			}	
 		}
 
-	#filling in the data for the venn diagrams 	
-	{ 
-		if(quant_percentages[1] != 0) 
+		#filling in the data for the venn diagrams 	
 		{ 
-			venn_quants <- c(0,quant_percentages) 
-		} 
-		else 
-		{ 
-			venn_quants <- quant_percentages 
-		} 
-
-		ind_count <- 0 
-		for(m in (venn_quants)*100) 
-		{	 
-			ind_count <- ind_count + 1 
-			if(venn_ans1 == "y") 
+			if(quant_percentages[1] != 0) 
 			{ 
-				system(paste("bedtools intersect -a ~/Analyze4C/temp/FPKM_",m,"per.bed -b ~/Analyze4C/temp/ps_conts_",m,"per.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_",m,"per_A.bed",sep="")) 
-				venn_A <- read.table(paste("~/Analyze4C/temp/venn_",m,"per_A.bed",sep="")) 
-				if(venn_ans2 == "y") 
-				{ 
-					system(paste("bedtools intersect -a ~/Analyze4C/temp/FPKM_",m,"per.bed -b ~/Analyze4C/temp/ps_conts_",m,"per.bed -c > ~/Analyze4C/temp/venn_",m,"per_B.bed",sep="")) 
-					venn_B <- read.table(paste("~/Analyze4C/temp/venn_",m,"per_B.bed",sep="")) 
-					#if the number in the 1st is 0 but the number in the 2nd is more than ovlp_num then we will consider it to be 1 
-					venn_A[venn_B[,5]>=ovlp_num,5] <- 1 
-				} 
-				#add the correct number to venn_col_num rows 
-#i need to collect the data differently into venn_DF, collect the actual indices that have 1, and turn them into a one string, and then list them together (instead of columns in a data frame) 
-# and then use calculate.overlap
-				#venn_DF[[ind_count]][[venn_col_num]] <- as.character(paste(venn_A[venn_A[,5] == 1,1:3][,1],venn_A[venn_A[,5] == 1,1:3][,2],venn_A[venn_A[,5] == 1,1:3][,3])) 			
-				venn_DF[[ind_count]][venn_A[,5]>=1,venn_col_num] <- 1 
+				venn_quants <- c(0,quant_percentages) 
 			} 
 			else 
 			{ 
-				system(paste("bedtools intersect -a ~/Analyze4C/temp/FPKM_",m,"per.bed -b ~/Analyze4C/temp/ps_conts_",m,"per.bed -c > ~/Analyze4C/temp/venn_",m,"per.bed",sep="")) 
-				venn <- read.table(paste("~/Analyze4C/temp/venn_",m,"per.bed",sep="")) 
-				#venn_DF[[ind_count]][[venn_col_num]] <- as.character(paste(venn[venn[,5] == 1,1:3][,1],venn[venn[,5] == 1,1:3][,2],venn[venn[,5] == 1,1:3][,3])) 			
-				#add the correct number to venn_col_num rows 
-				venn_DF[[ind_count]][venn[,5]>=1,venn_col_num] <- 1 	
-			} 			
+				venn_quants <- quant_percentages 
+			} 
+
+			ind_count <- 0 
+			for(m in (venn_quants)*100) 
+			{	 browser()
+				ind_count <- ind_count + 1 
+				if(venn_ans1 == "y") 
+				{ 
+					system(paste("bedtools intersect -a ~/Analyze4C/temp/FPKM_",m,"per.bed -b ~/Analyze4C/temp/ps_conts_",m,"per.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_",m,"per_A.bed",sep="")) 
+					venn_A <- read.table(paste("~/Analyze4C/temp/venn_",m,"per_A.bed",sep="")) 
+					if(venn_ans2 == "y") 
+					{ 
+						system(paste("bedtools intersect -a ~/Analyze4C/temp/FPKM_",m,"per.bed -b ~/Analyze4C/temp/ps_conts_",m,"per.bed -c > ~/Analyze4C/temp/venn_",m,"per_B.bed",sep="")) 
+						venn_B <- read.table(paste("~/Analyze4C/temp/venn_",m,"per_B.bed",sep="")) 
+						#if the number in the 1st is 0 but the number in the 2nd is more than ovlp_num then we will consider it to be 1 
+						venn_A[venn_B[,5]>=ovlp_num,5] <- 1 
+					} 
+					#add the correct number to venn_col_num rows 
+					#i need to collect the data differently into venn_DF, collect the actual indices that have 1, and turn them into a one string, and then list them together (instead of columns in a data frame) 
+					# and then use calculate.overlap
+					#venn_DF[[ind_count]][[venn_col_num]] <- as.character(paste(venn_A[venn_A[,5] == 1,1:3][,1],venn_A[venn_A[,5] == 1,1:3][,2],venn_A[venn_A[,5] == 1,1:3][,3])) 			
+					venn_DF[[ind_count]][venn_A[,5]>=1,venn_col_num] <- 1 
+				} 
+				else 
+				{ 
+					system(paste("bedtools intersect -a ~/Analyze4C/temp/FPKM_",m,"per.bed -b ~/Analyze4C/temp/ps_conts_",m,"per.bed -c > ~/Analyze4C/temp/venn_",m,"per.bed",sep="")) 
+					venn <- read.table(paste("~/Analyze4C/temp/venn_",m,"per.bed",sep="")) 
+					#venn_DF[[ind_count]][[venn_col_num]] <- as.character(paste(venn[venn[,5] == 1,1:3][,1],venn[venn[,5] == 1,1:3][,2],venn[venn[,5] == 1,1:3][,3])) 			
+					#add the correct number to venn_col_num rows 
+					venn_DF[[ind_count]][venn[,5]>=1,venn_col_num] <- 1 	
+				} 			
+			} 
 		} 
-	} 
 		
 		#removing the files from 'temp' folder
-		{
-			#removing first the range that begins with 0%
-			#system(paste("rm ~/Analyze4C/temp/ps_conts_0per.bed",sep=""))
-			#system(paste("rm ~/Analyze4C/temp/FPKM_0per.bed",sep=""))
-			#system(paste("rm ~/Analyze4C/temp/FPKM_VS_contacts_0per.bed",sep=""))
-			
-			#removing the rest of the range files
-			#for(m in 1:numOfquants)
-			#{
-			#	quant <- quant_percentages[m]*100 #getting the specific quantile in percentage (no fraction)
-			#	system(paste("rm ~/Analyze4C/temp/ps_conts_",quant,"per.bed",sep=""))
-			#	system(paste("rm ~/Analyze4C/temp/FPKM_",quant,"per.bed",sep=""))
-				#system(paste("rm ~/Analyze4C/temp/FPKM_VS_contacts_",quant,"per.bed",sep=""))
-			#}
-			
-			#removing the intersection files
-			#system(paste("rm ~/Analyze4C/temp/FPKM_VS_contacts_0per.bed",sep=""))
-			#for(n in 1:numOfquants)
-			#{
-			#	quant <- quant_percentages[n]*100 #getting the specific quantile in percentage (no fraction)
-			#	system(paste("rm ~/Analyze4C/temp/FPKM_VS_contacts_",quant,"per.bed",sep=""))
-			#}
-			
-			#system("rm ~/Analyze4C/temp/ps_dat_temp.sgr")
-			system("rm ~/Analyze4C/temp/*")
-		}	
+		system("rm ~/Analyze4C/temp/*")
+		
 		#i might want to take the last column of the intersection files (column 7, these are the number of bp that intersect), and sum them.
 		#then compare this number and the number we get with other experiments
 	}		
@@ -768,12 +795,15 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 	names(summer_all) <- all_file_names #adding the names of the files to the list, each 'summer' will get the name of the corresponding file
 	names(summer_FPKM_self_all) <- all_file_names #adding the names of the files to the list, each 'summer_FPKM_self_all' will get the name of the corresponding file
 	names(summer_ps_self_all) <- all_file_names #adding the names of the files to the list, each 'summer_ps_self_all' will get the name of the corresponding file
-	
+	names(summer_FPKMvsPscore_all) <- all_file_names #adding the names of the files to the list, each 'summer_FPKMvsPscore' will get the name of the corresponding file
+
 	#create plots:		
 	FPKM_dataframe <- c()
 	ps_dataframe <- c()
 	exp_names <- c() #contains the names given by user to each example
-	
+	FPKMvsPscore_dataframe <- list()
+	FPKMvsPscore_wUnintersected <- list()
+	browser()
 	for(h in 1:z)
 	{
 		exp_name <- readline(prompt=cat("\nenter the name you would like to use in the graph for experiment",h,":\n"))
@@ -781,6 +811,17 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 		FPKM_per <- summer_all[[h]]/summer_FPKM_self_all[[h]]
 		ps_per <- summer_all[[h]]/summer_ps_self_all[[h]]
 		
+		#creating a matrix with all the intersections including the ones that didn't intersect
+		FPKMvsPscore_wUnintersected_temp <- c()
+		for(a in 1:(numOfquants+1))
+		{
+		#	FPKMvsPscore_per[[h]][a,] <- summer_FPKMvsPscore_all[[h]][a,]/summer_FPKM_self_all[[h]][a]
+			FPKMvsPscore_wUnintersected_temp <- rbind(FPKMvsPscore_wUnintersected_temp,c(summer_FPKMvsPscore_all[[h]][a,],summer_FPKM_self_all[[h]][a]-sum(summer_FPKMvsPscore_all[[h]][a,])))
+		}
+		colnames(FPKMvsPscore_wUnintersected_temp)[numOfquants+2] <- "FPKM_bps_not_intersected"
+		FPKMvsPscore_wUnintersected[[h]] <- FPKMvsPscore_wUnintersected_temp
+		
+		#creating the ranges names for each quantile
 		percentages_FPKM <- c()
 		for(a in 1:(length(colnames(FPKM_per))-1))
 		{
@@ -788,12 +829,13 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 			percentages_FPKM <- c(percentages_FPKM,percentages_FPKM_temp)
 		}
 		percentages_FPKM_temp <- paste(colnames(FPKM_per)[length(colnames(FPKM_per))],"-100%",sep="")
-		percentages_FPKM <- c(percentages_FPKM,percentages_FPKM_temp)
-		
+		percentages_FPKM <- c(percentages_FPKM,percentages_FPKM_temp)	
+	
 		FPKM_dataframe_temp <- data.frame(percentages_FPKM,as.numeric(t(FPKM_per)),rep(exp_name,nrow(FPKM_per)))
 		names(FPKM_dataframe_temp) <- c("quantile_range","per","experiment")
 		FPKM_dataframe <- rbind(FPKM_dataframe,FPKM_dataframe_temp)
 		
+		#creating the ranges names for each quantile
 		percentages_ps <- c()
 		for(a in 1:(length(colnames(ps_per))-1))
 		{
@@ -802,17 +844,80 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 		}
 		percentages_ps_temp <- paste(colnames(ps_per)[length(colnames(ps_per))],"-100%",sep="")
 		percentages_ps <- c(percentages_ps,percentages_ps_temp)
-		
+	
 		ps_dataframe_temp <- data.frame(percentages_ps,as.numeric(t(ps_per)),rep(exp_name,nrow(ps_per)))
 		names(ps_dataframe_temp) <- c("quantile_range","per","experiment")
 		ps_dataframe <- rbind(ps_dataframe,ps_dataframe_temp)
+		
+		#creating the ranges names for each quantile			
+		ranges_FPKMvsPscore <- c()
+		for(xx in 1:length(percentages_FPKM))
+		{	
+			for(yy in 1:length(percentages_FPKM))
+			{
+				ranges_FPKMvsPscore_temp <- paste(percentages_FPKM[xx]," FPKM X ",percentages_FPKM[yy]," p-score",sep="")
+				ranges_FPKMvsPscore <- c(ranges_FPKMvsPscore,ranges_FPKMvsPscore_temp)
+			}
+			ranges_FPKMvsPscore <- c(ranges_FPKMvsPscore,"FPKM_bps_not_intersected")
+		}	
+		
+		#list of lists - z elements in first list and number quants for second
+		FPKMvsPscore_dataframe_temp <- list()
+		aa <- 1
+		bb <- 1
+		for(b in 1:(numOfquants+1))
+		{
+			cc <- aa * (numOfquants+2)
+			FPKMvsPscore_dataframe_temp[[b]] <- data.frame(ranges_FPKMvsPscore[bb:cc],as.numeric(t(FPKMvsPscore_wUnintersected[[h]][b,])),rep(exp_name,length(FPKMvsPscore_wUnintersected[[h]][b,])))
+			names(FPKMvsPscore_dataframe_temp[[b]]) <- c("FPKM_quantile_X_pScore_quantile","bps_intersected","experiment")
+			bb <- bb + (numOfquants+2)
+			aa <- aa + 1			
+		}
+		FPKMvsPscore_dataframe[[h]] <- FPKMvsPscore_dataframe_temp
 	}
 
 	#getting the date and time
 	DandT1 <- toString(Sys.time())
 	DandT2 <- gsub(" ","_",DandT1)
 	DandT2 <- gsub(":","",DandT2)
+	
+	#creating plots that compare each FPKM quartile with all the quartiles of the p-scores
+	cat("\nFPKM quantile vs. p-score quantiles plots:\n\n")
+	save_flag <- 0
+	for(p1 in 1:z)
+	{
+		for(p2 in 1:(numOfquants+1))
+		{
+			#create a bar chart without the rest of the FPKMs that didn't intersect 
+			FPKMvsPscore_temp2 <- FPKMvsPscore_dataframe[[p1]][[p2]][-(numOfquants+2),]
+			FPKMvsPscore_temp2$bps_intersected <- (FPKMvsPscore_temp2$bps_intersected/summer_FPKM_self_all[[p1]][p2])*100		
+			FPKMvsPscore_bar <- ggplot2::ggplot(FPKMvsPscore_temp2, ggplot2::aes(x=FPKM_quantile_X_pScore_quantile,y=bps_intersected,fill=FPKM_quantile_X_pScore_quantile)) + ggplot2::geom_bar(position = "dodge",stat = "identity") + ggplot2::ggtitle("FPKM quantile VS. p-score quantiles - percentage bar chart") + ggplot2::labs(x="FPKM quantile VS. p-score quantile",y="(intersections(bp)/FPKM(bp))*100 (%)") + ggplot2::theme(plot.title = ggplot2::element_text(size=15))
+			cat("\ncreating plot\nplease wait...\n\n")
+			print(FPKMvsPscore_bar)
+			if(readline("\nwould you like to save this plot?\ny/n\n\n") == "y")
+			{
+				wd <- as.numeric(readline(prompt=cat("\nenter the width size of the plot:\n\n")))
+				ht <- as.numeric(readline(prompt=cat("\nenter the height size of the plot:\n\n")))	
+				FPKMvsPscore_barPlot_name <- paste("~/Analyze4C/plots/expressionVScontacts_FPKMquantileVSpScorequantiles_bars_file",p1,"_",DandT2,".png",sep="")
+				ggplot2::ggsave(FPKMvsPscore_barPlot_name,width=wd,height=ht)
+				save_flag <- 1
+			}
 
+			#create a pie chart with the rest of the FPKMs that didn't intersect
+			FPKMvsPscore_pie <- ggplot2::ggplot(FPKMvsPscore_dataframe[[p1]][[p2]], ggplot2::aes(x="",y=bps_intersected,fill=FPKM_quantile_X_pScore_quantile)) + ggplot2::geom_bar(stat = "identity") + ggplot2::ggtitle("FPKM quantile VS. p-score quantiles - intersections pie chart") + ggplot2::theme(plot.title = ggplot2::element_text(size=15)) + ggplot2::coord_polar("y")
+			cat("\ncreating plot\nplease wait...\n\n")
+			print(FPKMvsPscore_pie)
+			if(readline("\nwould you like to save this plot?\ny/n\n\n") == "y")
+			{
+				wd <- as.numeric(readline(prompt=cat("\nenter the width size of the plot:\n\n")))
+				ht <- as.numeric(readline(prompt=cat("\nenter the height size of the plot:\n\n")))	
+				FPKMvsPscore_piePlot_name <- paste("~/Analyze4C/plots/expressionVScontacts_FPKMquantileVSpScorequantiles_pieChart_file",p1,"_",DandT2,".png",sep="")
+				ggplot2::ggsave(FPKMvsPscore_piePlot_name,width=wd,height=ht)
+				save_flag <- 1
+			}
+		}
+	}
+	
 	#creating a plot
 	fpkm_plot <- ggplot2::ggplot(FPKM_dataframe, ggplot2::aes(x=quantile_range,y=per,fill=experiment)) + ggplot2::geom_bar(position = "dodge",stat = "identity") + ggplot2::ggtitle("ratio of contact intersections with FPKM and all FPKM") + ggplot2::labs(x="quantile (%)",y="intersections(bp)/FPKM(bp)") + ggplot2::theme(plot.title = ggplot2::element_text(size=15))	
 	if(numOFexperiments == 2) #this comparison will only work if there are 2 experiments, if there is a different number then we can plot the data but not show significance
@@ -1005,7 +1110,7 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 	} 
 	
 	#recording the data into 'expressionVScontacts_sumOFintersections_plots.txt' 
-	if(choice6 == "y" | choice7 == "y" | venn_flag == 1) 
+	if(choice6 == "y" | choice7 == "y" | venn_flag == 1 | save_flag == 1)
 	{
 		#saving the parameters and details to expressionVScontacts_sumOFintersections_plots.txt
 		expressionVScontacts_sumOFintersections_plots[nrow(expressionVScontacts_sumOFintersections_plots)+1,] <- c(DandT1,file.name_FPKM,numOFexperiments,exps,int_chroms,summed_chr,RE_gap,bp_gap)
