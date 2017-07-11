@@ -27,6 +27,9 @@
 #but since we are comparing between the same peaks quantile (the difference is the p-score quantiles) so we don't need to normalize
 #although we probably won't be able to compare between peaks quantiles. the purpose is only to see if any peaks quantile intersects more with any specific p-score
 #quantile not to compare between the peaks quantiles.
+#[possible correction: we probably are able to compare between quantiles since the data is basically normalized, since we are getting the percentage of interesected out
+#of all bps in quantile, this in a way fits the equation of normalization where (x-min)/(max-min), the max is the self of the peaks and the minimum is 0 (no intersections)
+#so that gives us (x-0)/(max-0) -> x/max -> x/self, and this is the calculation we have.]
 #p-score - no need to normalize since the quantile division happens at the p-score level and they are all of size 1 bp, only after that contact bands are made.
 
 ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFintersections_plots,rearranged_rawData)

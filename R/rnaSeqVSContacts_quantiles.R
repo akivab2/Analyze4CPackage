@@ -27,6 +27,9 @@
 #but since we are comparing between the same FPKM quantile (the difference is the p-score quantiles) so we don't need to normalize
 #although we probably won't be able to compare between FPKM quantiles. the purpose is only to see if any FPKM quantile intersects more with any specific p-score
 #quantile not to compare between the FPKM quantiles.
+#[possible correction: we probably are able to compare between quantiles since the data is basically normalized, since we are getting the percentage of interesected out
+#of all bps in quantile, this in a way fits the equation of normalization where (x-min)/(max-min), the max is the self of the FPKM and the minimum is 0 (no intersections)
+#so that gives us (x-0)/(max-0) -> x/max -> x/self, and this is the calculation we have.]
 #p-score - no need to normalize since the quantile division happens at the p-score level and they are all of size 1 bp, only after that contact bands are made.
 
 rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOFintersections_plots,rearranged_rawData)
@@ -755,7 +758,7 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 
 			ind_count <- 0 
 			for(m in (venn_quants)*100) 
-			{	 browser()
+			{
 				ind_count <- ind_count + 1 
 				if(venn_ans1 == "y") 
 				{ 
@@ -803,7 +806,7 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 	exp_names <- c() #contains the names given by user to each example
 	FPKMvsPscore_dataframe <- list()
 	FPKMvsPscore_wUnintersected <- list()
-	browser()
+
 	for(h in 1:z)
 	{
 		exp_name <- readline(prompt=cat("\nenter the name you would like to use in the graph for experiment",h,":\n"))
@@ -917,7 +920,7 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 			}
 		}
 	}
-	
+
 	#creating a plot
 	fpkm_plot <- ggplot2::ggplot(FPKM_dataframe, ggplot2::aes(x=quantile_range,y=per,fill=experiment)) + ggplot2::geom_bar(position = "dodge",stat = "identity") + ggplot2::ggtitle("ratio of contact intersections with FPKM and all FPKM") + ggplot2::labs(x="quantile (%)",y="intersections(bp)/FPKM(bp)") + ggplot2::theme(plot.title = ggplot2::element_text(size=15))	
 	if(numOFexperiments == 2) #this comparison will only work if there are 2 experiments, if there is a different number then we can plot the data but not show significance
