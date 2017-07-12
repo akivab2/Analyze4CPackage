@@ -901,7 +901,7 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 			{
 				wd <- as.numeric(readline(prompt=cat("\nenter the width size of the plot:\n\n")))
 				ht <- as.numeric(readline(prompt=cat("\nenter the height size of the plot:\n\n")))	
-				FPKMvsPscore_barPlot_name <- paste("~/Analyze4C/plots/expressionVScontacts_FPKMquantileVSpScorequantiles_bars_file",p1,"_",DandT2,".png",sep="")
+				FPKMvsPscore_barPlot_name <- paste("~/Analyze4C/plots/expressionVScontacts_FPKMquantileVSpScorequantiles_bars_file",p1,"_quant",p2,"_",DandT2,".png",sep="")
 				ggplot2::ggsave(FPKMvsPscore_barPlot_name,width=wd,height=ht)
 				save_flag <- 1
 			}
@@ -914,7 +914,7 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 			{
 				wd <- as.numeric(readline(prompt=cat("\nenter the width size of the plot:\n\n")))
 				ht <- as.numeric(readline(prompt=cat("\nenter the height size of the plot:\n\n")))	
-				FPKMvsPscore_piePlot_name <- paste("~/Analyze4C/plots/expressionVScontacts_FPKMquantileVSpScorequantiles_pieChart_file",p1,"_",DandT2,".png",sep="")
+				FPKMvsPscore_piePlot_name <- paste("~/Analyze4C/plots/expressionVScontacts_FPKMquantileVSpScorequantiles_pieChart_file",p1,"_quant",p2,"_",DandT2,".png",sep="")
 				ggplot2::ggsave(FPKMvsPscore_piePlot_name,width=wd,height=ht)
 				save_flag <- 1
 			}

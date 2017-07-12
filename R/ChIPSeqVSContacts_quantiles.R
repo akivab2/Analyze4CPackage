@@ -930,7 +930,7 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 			{
 				wd <- as.numeric(readline(prompt=cat("\nenter the width size of the plot:\n\n")))
 				ht <- as.numeric(readline(prompt=cat("\nenter the height size of the plot:\n\n")))	
-				peaksvsPscore_barPlot_name <- paste("~/Analyze4C/plots/expressionVScontacts_peaksquantileVSpScorequantiles_bars_file",p1,"_",DandT2,".png",sep="")
+				peaksvsPscore_barPlot_name <- paste("~/Analyze4C/plots/expressionVScontacts_peaksquantileVSpScorequantiles_bars_file",p1,"_quant",p2,"_",DandT2,".png",sep="")
 				ggplot2::ggsave(peaksvsPscore_barPlot_name,width=wd,height=ht)
 				save_flag <- 1
 			}
@@ -943,7 +943,7 @@ ChIPSeqVSContacts_quantiles <- function(Experiments_4C,ChIPseqVScontacts_sumOFin
 			{
 				wd <- as.numeric(readline(prompt=cat("\nenter the width size of the plot:\n\n")))
 				ht <- as.numeric(readline(prompt=cat("\nenter the height size of the plot:\n\n")))	
-				peaksvsPscore_piePlot_name <- paste("~/Analyze4C/plots/expressionVScontacts_peaksquantileVSpScorequantiles_pieChart_file",p1,"_",DandT2,".png",sep="")
+				peaksvsPscore_piePlot_name <- paste("~/Analyze4C/plots/expressionVScontacts_peaksquantileVSpScorequantiles_pieChart_file",p1,"_quant",p2,"_",DandT2,".png",sep="")
 				ggplot2::ggsave(peaksvsPscore_piePlot_name,width=wd,height=ht)
 				save_flag <- 1
 			}
