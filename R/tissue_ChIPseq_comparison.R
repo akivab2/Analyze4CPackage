@@ -275,7 +275,7 @@ tissue_ChIPseq_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 				lin_nums2 <- as.integer(unlist(strsplit(lin_nums1,", ")))
 				
 				#getting the raw data file that the contact bands file was created from:
-				if(!identical(grep("covRemoved",sp1),integer(0)))
+				if(!identical(grep("covRemoved",sp1[e]),integer(0)))
 				{
 					ls_raws <- system("ls ~/Analyze4C/rawData/coverage_removed",intern=TRUE)
 				}
@@ -289,7 +289,7 @@ tissue_ChIPseq_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 				{
 					if(identical(grep("removed",ls_raws[o]),integer(0)))
 					{						
-						if(!identical(grep("covRemoved",sp1),integer(0)))
+						if(!identical(grep("covRemoved",sp1[e]),integer(0)))
 						{
 							#getting the raw data
 							raw_dat <- read.table(paste("~/Analyze4C/rawData/coverage_removed/",ls_raws[o],sep=""))
@@ -993,7 +993,7 @@ tissue_ChIPseq_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 					}
 					
 					#saving the parameters and details to ChIPseqVScontacts_plots.txt
-					ChIPseqVScontacts_plots[nrow(ChIPseqVScontacts_plots)+1,] <- c(nm,struct,conts_filename,peaks_filename1,peaks_filename2,bpORpeaks,percentageOf,DandT1,CO_col,CO_type,peaks_cutoff,peaks_CO_appliedTo,value_col,Intersection_chromosomes,notes)
+					ChIPseqVScontacts_plots[nrow(ChIPseqVScontacts_plots)+1,] <- c(vennName,struct,conts_filename,peaks_filename1,peaks_filename2,bpORpeaks,percentageOf,DandT1,CO_col,CO_type,peaks_cutoff,peaks_CO_appliedTo,value_col,Intersection_chromosomes,notes)
 					#sorting the list of experiments by bait alphabetically (and sorting the row indices)
 					ChIPseqVScontacts_plots <- ChIPseqVScontacts_plots[order(ChIPseqVScontacts_plots$Plotfile_name),]
 					rownames(ChIPseqVScontacts_plots) <- seq(length=nrow(ChIPseqVScontacts_plots))
@@ -1558,7 +1558,7 @@ tissue_ChIPseq_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 					}
 					
 					#saving the parameters and details to ChIPseqVScontacts_plots.txt
-					ChIPseqVScontacts_plots[nrow(ChIPseqVScontacts_plots)+1,] <- c(nm,struct,conts_filename,peaks_filename1,peaks_filename2,bpORpeaks,percentageOf,DandT1,CO_col,CO_type,peaks_cutoff,peaks_CO_appliedTo,value_col,Intersection_chromosomes,notes)
+					ChIPseqVScontacts_plots[nrow(ChIPseqVScontacts_plots)+1,] <- c(vennName,struct,conts_filename,peaks_filename1,peaks_filename2,bpORpeaks,percentageOf,DandT1,CO_col,CO_type,peaks_cutoff,peaks_CO_appliedTo,value_col,Intersection_chromosomes,notes)
 					#sorting the list of experiments by bait alphabetically (and sorting the row indices)
 					ChIPseqVScontacts_plots <- ChIPseqVScontacts_plots[order(ChIPseqVScontacts_plots$Plotfile_name),]
 					rownames(ChIPseqVScontacts_plots) <- seq(length=nrow(ChIPseqVScontacts_plots))
@@ -2227,7 +2227,7 @@ tissue_ChIPseq_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 					}
 					
 					#saving the parameters and details to ChIPseqVScontacts_plots.txt
-					ChIPseqVScontacts_plots[nrow(ChIPseqVScontacts_plots)+1,] <- c(nm,struct,conts_filename,peaks_filename1,peaks_filename2,bpORpeaks,percentageOf,DandT1,CO_col,CO_type,peaks_cutoff,peaks_CO_appliedTo,value_col,Intersection_chromosomes,notes)
+					ChIPseqVScontacts_plots[nrow(ChIPseqVScontacts_plots)+1,] <- c(vennName,struct,conts_filename,peaks_filename1,peaks_filename2,bpORpeaks,percentageOf,DandT1,CO_col,CO_type,peaks_cutoff,peaks_CO_appliedTo,value_col,Intersection_chromosomes,notes)
 					#sorting the list of experiments by bait alphabetically (and sorting the row indices)
 					ChIPseqVScontacts_plots <- ChIPseqVScontacts_plots[order(ChIPseqVScontacts_plots$Plotfile_name),]
 					rownames(ChIPseqVScontacts_plots) <- seq(length=nrow(ChIPseqVScontacts_plots))

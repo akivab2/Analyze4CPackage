@@ -31,7 +31,7 @@ ChIPseq_Tissue_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 	for(p in 1:2)
 	{
 		#aking user if to use already existing contact band file or create a new one	
-		ans1 <- as.numeric(readline(prompt=cat("\nfor contact bands file number",p,", would you like to:\n1) choose an already existing contact bands file\n2) create a new contact bands data file\n\n")))
+		ans1 <- as.numeric(readline(prompt=cat("\n\nfor contact bands file number",p,", would you like to:\n1) choose an already existing contact bands file\n2) create a new contact bands data file\n\n")))
 		if(ans1 == 1) #taking an already existing contact bands file
 		{
 			ls_conts <- system("ls ~/Analyze4C/contact_bands/",intern=TRUE)
@@ -249,7 +249,7 @@ ChIPseq_Tissue_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 					lin_nums2 <- as.integer(unlist(strsplit(lin_nums1,", ")))
 					
 					#getting the raw data file that the contact bands file was created from:
-					if(!identical(grep("covRemoved",sp1),integer(0)))
+					if(!identical(grep("covRemoved",sp1[[e]]),integer(0)))
 					{
 						ls_raws <- system("ls ~/Analyze4C/rawData/coverage_removed",intern=TRUE)
 					}
@@ -263,7 +263,7 @@ ChIPseq_Tissue_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 					{
 						if(identical(grep("removed",ls_raws[o]),integer(0)))
 						{
-							if(!identical(grep("covRemoved",sp1),integer(0)))
+							if(!identical(grep("covRemoved",sp1[[e]]),integer(0)))
 							{
 								#getting the raw data
 								raw_dat <- read.table(paste("~/Analyze4C/rawData/coverage_removed/",ls_raws[o],sep=""))
@@ -857,7 +857,7 @@ ChIPseq_Tissue_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 			if(readline(prompt=cat("\nwould you like to create venn diagrams?\ny/n\n\n")) == "y")
 			{
 				#creating the venn data frame for 0 percent
-				venn_DF <- data.frame(rep(1,nrow(peaks)),matrix(0,nrow(peaks),2))##!
+				venn_DF <- data.frame(rep(1,nrow(peaks_afterCO[[1]])),matrix(0,nrow(peaks_afterCO[[1]]),2))##!
 
 				cat("\nvenn diagram parameters:\n\n")
 				venn_ans1 <- readline(prompt=cat("\nwould you like to consider overlaps to be only those that intersect more than 1 bp?\ny/n\n\n"))
@@ -949,7 +949,7 @@ ChIPseq_Tissue_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 					}
 					
 					#saving the parameters and details to ChIPseqVScontacts_plots.txt
-					ChIPseqVScontacts_plots[nrow(ChIPseqVScontacts_plots)+1,] <- c(nm,struct,peaks_filename,conts_filename[1],conts_filename[2],bpORpeaks,percentageOf,DandT1,CO_col,CO_type,peaks_cutoff,peaks_CO_appliedTo,value_col,Intersection_chromosomes,notes)
+					ChIPseqVScontacts_plots[nrow(ChIPseqVScontacts_plots)+1,] <- c(vennName,struct,peaks_filename,conts_filename[1],conts_filename[2],bpORpeaks,percentageOf,DandT1,CO_col,CO_type,peaks_cutoff,peaks_CO_appliedTo,value_col,Intersection_chromosomes,notes)
 					#sorting the list of experiments by bait alphabetically (and sorting the row indices)
 					ChIPseqVScontacts_plots <- ChIPseqVScontacts_plots[order(ChIPseqVScontacts_plots$Plotfile_name),]
 					rownames(ChIPseqVScontacts_plots) <- seq(length=nrow(ChIPseqVScontacts_plots))
@@ -1432,7 +1432,7 @@ ChIPseq_Tissue_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 			if(readline(prompt=cat("\nwould you like to create venn diagrams?\ny/n\n\n")) == "y")
 			{
 				#creating the venn data frame for 0 percent
-				venn_DF <- data.frame(rep(1,nrow(peaks)),matrix(0,nrow(peaks),2))##!
+				venn_DF <- data.frame(rep(1,nrow(peaks_afterCO[[1]])),matrix(0,nrow(peaks_afterCO[[1]]),2))##!
 
 				cat("\nvenn diagram parameters:\n\n")
 				venn_ans1 <- readline(prompt=cat("\nwould you like to consider overlaps to be only those that intersect more than 1 bp?\ny/n\n\n"))
@@ -1524,7 +1524,7 @@ ChIPseq_Tissue_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 					}
 					
 					#saving the parameters and details to ChIPseqVScontacts_plots.txt
-					ChIPseqVScontacts_plots[nrow(ChIPseqVScontacts_plots)+1,] <- c(nm,struct,peaks_filename,conts_filename[1],conts_filename[2],bpORpeaks,percentageOf,DandT1,CO_col,CO_type,peaks_cutoff,peaks_CO_appliedTo,value_col,Intersection_chromosomes,notes)
+					ChIPseqVScontacts_plots[nrow(ChIPseqVScontacts_plots)+1,] <- c(vennName,struct,peaks_filename,conts_filename[1],conts_filename[2],bpORpeaks,percentageOf,DandT1,CO_col,CO_type,peaks_cutoff,peaks_CO_appliedTo,value_col,Intersection_chromosomes,notes)
 					#sorting the list of experiments by bait alphabetically (and sorting the row indices)
 					ChIPseqVScontacts_plots <- ChIPseqVScontacts_plots[order(ChIPseqVScontacts_plots$Plotfile_name),]
 					rownames(ChIPseqVScontacts_plots) <- seq(length=nrow(ChIPseqVScontacts_plots))
@@ -2164,7 +2164,7 @@ ChIPseq_Tissue_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 			if(readline(prompt=cat("\nwould you like to create venn diagrams?\ny/n\n\n")) == "y")
 			{
 				#creating the venn data frame for 0 percent
-				venn_DF <- data.frame(rep(1,nrow(peaks)),matrix(0,nrow(peaks),2))##!
+				venn_DF <- data.frame(rep(1,nrow(peaks_afterCO[[1]])),matrix(0,nrow(peaks_afterCO[[1]]),2))##!
 
 				cat("\nvenn diagram parameters:\n\n")
 				venn_ans1 <- readline(prompt=cat("\nwould you like to consider overlaps to be only those that intersect more than 1 bp?\ny/n\n\n"))
@@ -2264,7 +2264,7 @@ ChIPseq_Tissue_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 					}
 					
 					#saving the parameters and details to ChIPseqVScontacts_plots.txt
-					ChIPseqVScontacts_plots[nrow(ChIPseqVScontacts_plots)+1,] <- c(nm,struct,peaks_filename,conts_filename[1],conts_filename[2],bpORpeaks,percentageOf,DandT1,CO_col,CO_type,peaks_cutoff,peaks_CO_appliedTo,value_col,Intersection_chromosomes,notes)
+					ChIPseqVScontacts_plots[nrow(ChIPseqVScontacts_plots)+1,] <- c(vennName,struct,peaks_filename,conts_filename[1],conts_filename[2],bpORpeaks,percentageOf,DandT1,CO_col,CO_type,peaks_cutoff,peaks_CO_appliedTo,value_col,Intersection_chromosomes,notes)
 					#sorting the list of experiments by bait alphabetically (and sorting the row indices)
 					ChIPseqVScontacts_plots <- ChIPseqVScontacts_plots[order(ChIPseqVScontacts_plots$Plotfile_name),]
 					rownames(ChIPseqVScontacts_plots) <- seq(length=nrow(ChIPseqVScontacts_plots))
