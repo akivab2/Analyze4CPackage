@@ -145,8 +145,8 @@ rnaSeqCorContacts_forReads <- function(Experiments_4C,rearranged_rawData,express
 
 		#finding the specific raw data files information in Experiments_4C
 		sp1 <- unlist(strsplit(file.name,"[.]"))
-		sp2 <- strsplit(sp1[[1]][1],"_")
-		out <- findIn.Experiments_4C(sp2[[1]][1],sp2[[1]][2],sp2[[1]][3],Experiments_4C)
+		sp2 <- unlist(strsplit(sp1[1],"_"))
+		out <- findIn.Experiments_4C(sp2[1],sp2[2],sp2[3],Experiments_4C)
 
 		#getting the cis chromosome number
 		cis <- as.numeric(out[2])
@@ -223,8 +223,8 @@ rnaSeqCorContacts_forReads <- function(Experiments_4C,rearranged_rawData,express
 
 			#finding the specific raw data files information in Experiments_4C
 			sp1 <- unlist(strsplit(file.name,"[.]"))
-			sp2 <- strsplit(sp1[[1]][1],"_")
-			out <- findIn.Experiments_4C(sp2[[1]][1],sp2[[1]][2],sp2[[1]][3],Experiments_4C)
+			sp2 <- unlist(strsplit(sp1[1],"_"))
+			out <- findIn.Experiments_4C(sp2[1],sp2[2],sp2[3],Experiments_4C)
 
 			#getting the cis chromosome number
 			cis <- as.numeric(out[2])
@@ -383,7 +383,7 @@ rnaSeqCorContacts_forReads <- function(Experiments_4C,rearranged_rawData,express
 					
 		#adjusting the row numbers
 		rownames(reads_afterCO) <- seq(length=nrow(reads_afterCO))
-		browser()
+		
 		#applying a cutoff to the FPKM data
 		ans9 <- as.integer(readline(prompt=cat("\nenter the number of what type of cutoff method you would like to do for the FPKM:\n\n1) all chromosomes with the same cutoff (in FPKM)\n2) all chromosomes with the same cutoff percentage\n\n")))
 		if(ans9 == 1)
@@ -482,7 +482,7 @@ rnaSeqCorContacts_forReads <- function(Experiments_4C,rearranged_rawData,express
 		
 		#adjusting the row numbers			
 		rownames(FPKM_afterCO) <- seq(length=nrow(FPKM_afterCO))
-		
+
 		#removing the translocated areas from 'reads_afterCO' and 'FPKM_afterCO' if they were switched
 		if(translocated_flag == 1)
 		{

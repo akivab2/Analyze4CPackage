@@ -136,8 +136,8 @@ ChIPSeqCorContacts_forReads <- function(Experiments_4C,rearranged_rawData,ChIPse
 
 		#finding the specific raw data files information in Experiments_4C
 		sp1 <- unlist(strsplit(file.name,"[.]"))
-		sp2 <- strsplit(sp1[[1]][1],"_")
-		out <- findIn.Experiments_4C(sp2[[1]][1],sp2[[1]][2],sp2[[1]][3],Experiments_4C)
+		sp2 <- unlist(strsplit(sp1[1],"_"))
+		out <- findIn.Experiments_4C(sp2[1],sp2[2],sp2[3],Experiments_4C)
 
 		#getting the cis chromosome number
 		cis <- as.numeric(out[2])
@@ -214,8 +214,8 @@ ChIPSeqCorContacts_forReads <- function(Experiments_4C,rearranged_rawData,ChIPse
 
 			#finding the specific raw data files information in Experiments_4C
 			sp1 <- unlist(strsplit(file.name,"[.]"))
-			sp2 <- strsplit(sp1[[1]][1],"_")
-			out <- findIn.Experiments_4C(sp2[[1]][1],sp2[[1]][2],sp2[[1]][3],Experiments_4C)
+			sp2 <- unlist(strsplit(sp1[1],"_"))
+			out <- findIn.Experiments_4C(sp2[1],sp2[2],sp2[3],Experiments_4C)
 
 			#getting the cis chromosome number
 			cis <- as.numeric(out[2])
