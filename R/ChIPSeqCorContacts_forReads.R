@@ -267,56 +267,14 @@ ChIPSeqCorContacts_forReads <- function(Experiments_4C,rearranged_rawData,ChIPse
 			system(paste("bedtools makewindows -g ~/Analyze4C/temp/genome_sizes_temp.txt -w",winSize,"> ~/Analyze4C/temp/windows.bed"))
 		}
 		
-		#applying a cutoff to the raw-data data
+		#getting the cutoff for the raw data
 		ans8 <- as.integer(readline(prompt=cat("\nenter the number of what type of cutoff method you would like to do for the raw data:\n\n1) all chromosomes with the same cutoff (in number of reads)\n2) all chromosomes with the same cutoff percentage\n\n")))
 		if(ans8 == 1)
 		{
 			CO1 <- as.numeric(readline(prompt=cat("\nplease enter a number of reads cutoff. Anything above the cutoff will be considered a positive RE site:\n\n")))
 			CO_reads_type <- paste(CO_reads_type,";","fixed")
 			CO_reads <- paste(CO_reads,";",CO1)
-			
-			ans4 <- as.integer(readline(prompt=cat("\nshould the cutoff be applied to:\n1) the whole genome\n2) all trans\n3) cis\n\n")))
-			if(ans4 == 1) #whole genome
-			{
-				reads_afterCO <- rawData[rawData[,3]>=CO1,]
-				CO_reads_chroms <- paste(CO_reads_chroms,";","all")
-			}
-			else if(ans4 == 2) #trans
-			{
-				reads_afterCO <- c()
-				for(k in 1:numOFchroms) 
-				{
-					if(k!=cis)
-					{
-						reads_temp <- rawData[rawData[,1]==k & rawData[,3]>=CO1,]
-						reads_afterCO <- rbind(reads_afterCO,reads_temp)
-					}
-					else
-					{
-						reads_temp <- rawData[rawData[,1]==k,]
-						reads_afterCO <- rbind(reads_afterCO,reads_temp)
-					}
-				}
-				CO_reads_chroms <- paste(CO_reads_chroms,";","trans")
-			}
-			else if(ans4 == 3) #each chromosome separately
-			{		
-				reads_afterCO <- c()
-				for(k in 1:numOFchroms) 
-				{
-					if(k==cis)
-					{
-						reads_temp <- rawData[rawData[,1]==k & rawData[,3]>=CO1,]
-						reads_afterCO <- rbind(reads_afterCO,reads_temp)
-					}
-					else
-					{
-						reads_temp <- rawData[rawData[,1]==k,]
-						reads_afterCO <- rbind(reads_afterCO,reads_temp)
-					}
-				}
-				CO_reads_chroms <- paste(CO_reads_chroms,";","cis")
-			}				
+			ans4 <- as.integer(readline(prompt=cat("\nshould the cutoff be applied to:\n1) the whole genome\n2) all trans\n3) only cis\n\n")))			
 		}
 		else
 		{
@@ -325,46 +283,28 @@ ChIPSeqCorContacts_forReads <- function(Experiments_4C,rearranged_rawData,ChIPse
 			CO_reads <- paste(CO_reads,";",reads_COper)
 
 			ans4 <- as.integer(readline(prompt=cat("\nshould the cutoff percentage be of:\n1) the whole genome\n2) all trans\n3) each chromosome separately\n\n")))
+			
+			#getting the actual cutoffs (we do this here since we need to consider the translocated areas before removing them, if there are any, in order to calculate the cutoffs)
 			if(ans4 == 1) #whole genome
 			{
 				CO1 <- quantile(rawData[,3],reads_COper)
-				reads_afterCO <- rawData[rawData[,3]>=CO1,]
 				CO_reads_chroms <- paste(CO_reads_chroms,";","all")
 			}
 			else if(ans4 == 2) #trans
 			{
-				reads_afterCO <- c()
 				CO1 <- quantile(rawData[rawData[,1]!=cis,3],reads_COper)
-				for(k in 1:numOFchroms) 
-				{
-					if(k!=cis)
-					{
-						reads_temp <- rawData[rawData[,1]==k & rawData[,3]>=CO1,]
-						reads_afterCO <- rbind(reads_afterCO,reads_temp)
-					}
-					else
-					{
-						reads_temp <- rawData[rawData[,1]==k,]
-						reads_afterCO <- rbind(reads_afterCO,reads_temp)
-					}
-				}
 				CO_reads_chroms <- paste(CO_reads_chroms,";","trans")
 			}
 			else if(ans4 == 3) #each chromosome separately
-			{		
-				reads_afterCO <- c()
+			{
+				seperate_CO1 <- rep(0,numOFchroms)
 				for(k in 1:numOFchroms) 
 				{
-					CO1 <- quantile(rawData[rawData[,1]==k,3],reads_COper)
-					reads_temp <- rawData[rawData[,1]==k & rawData[,3]>=CO1,]
-					reads_afterCO <- rbind(reads_afterCO,reads_temp)
+					seperate_CO1[k] <- quantile(rawData[rawData[,1]==k,3],reads_COper)
 				}
-				CO_reads_chroms <- paste(CO_reads_chroms,";","each chromosome separately")	
+				CO_reads_chroms <- paste(CO_reads_chroms,";","each chromosome separately")				
 			}				
 		}
-					
-		#adjusting the row numbers
-		rownames(reads_afterCO) <- seq(length=nrow(reads_afterCO))
 		
 		#choosing the value from which the cutoffs are created and the value which is going to be used for each peak above and equal to the cutoff
 		cat("\napplying cutoffs to the peaks data:\n")
@@ -519,7 +459,7 @@ ChIPSeqCorContacts_forReads <- function(Experiments_4C,rearranged_rawData,ChIPse
 		#adjusting the row numbers			
 		rownames(peaks_afterCO) <- seq(length=nrow(peaks_afterCO))
 		
-		#removing the translocated areas from 'reads_afterCO' and 'peaks_afterCO' if they were switched
+		#removing the translocated areas from 'rawData' and 'peaks_afterCO' if they were switched
 		if(translocated_flag == 1)
 		{
 			cat("\nremoving translocated areas:\nthe purpose of this is in order to be able and intersect the reads with peaks\n")
@@ -550,7 +490,10 @@ ChIPSeqCorContacts_forReads <- function(Experiments_4C,rearranged_rawData,ChIPse
 			all_chroms <- seq(numOFchroms)
 			pointer <- 1
 			peaks_fin <- c()
-			reads_fin <- c()
+
+			#this is for removing sections from the raw data
+			rawData_temp <- cbind(rawData,rep(1,nrow(rawData)))
+			
 			for(r in seq(1,length(lin_nums2),by=2))
 			{
 				first <- lin_nums2[r]
@@ -561,18 +504,18 @@ ChIPSeqCorContacts_forReads <- function(Experiments_4C,rearranged_rawData,ChIPse
 					cat("\nerror:there is something wrong with the line numbers entered into the file 'rearranged_rawData'.\nthe first and last lines must be of the same chromosome\n\n")
 					return()
 				}
+
+				#this is for removing sections from the raw data
+				rawData_temp[first:second,ncol(rawData_temp)] <- 0			
 				
 				#taking all the chromosomes that aren't getting the removal treatment, and adding them to the peaks and raw data
 				while(all_chroms[pointer]!=ch)
 				{
-					reads_t <- reads_afterCO[reads_afterCO[,1]==all_chroms[pointer],]
-					reads_fin <- rbind(reads_fin,reads_t)
 					peaks_t <- peaks_afterCO[peaks_afterCO[,1]==all_chroms[pointer],]
 					peaks_fin <- rbind(peaks_fin,peaks_t)
 					pointer <- pointer + 1
 				}
 				
-				reads_t <- c() #just in case no conditions are met, this way we won't get the previous reads_t (this shouldn't happen, it's just a precaution)
 				peaks_t <- c() #just in case no conditions are met, this way we won't get the previous peaks_t (this shouldn't happen, it's just a precaution)
 				#getting the indices to remove
 				if(first==1)#if first is the 1st line in the file
@@ -581,19 +524,16 @@ ChIPSeqCorContacts_forReads <- function(Experiments_4C,rearranged_rawData,ChIPse
 					{			
 						if(rawData[second,1]!=rawData[(second+1),1]) #if it covers all the chromosome (if second is the last in chromosome) (1)
 						{
-							reads_t <- c()
 							peaks_t <- c()
 						}
 						else if(rawData[second,1]==rawData[(second+1),1]) #if second isn't the last of the chromosome (2)
 						{
 							#remove anything below the index at second
-							reads_t <- reads_afterCO[(reads_afterCO[,1]==ch)&(reads_afterCO[,2]>=rawData[(second+1),2]),]					
 							peaks_t <- peaks_afterCO[(peaks_afterCO[,1]==ch)&(peaks_afterCO[,2]>=rawData[(second+1),2]),]
 						}
 					}	
 					else #the line numbers cover all the data, so none of it is used (9)
 					{
-						reads_t <- c()	
 						peaks_t <- c()
 					}				
 				}
@@ -603,19 +543,16 @@ ChIPSeqCorContacts_forReads <- function(Experiments_4C,rearranged_rawData,ChIPse
 					{
 						if(rawData[second,1]!=rawData[(second+1),1]) #if second is the last in chromosome (4)
 						{
-							reads_t <- c()
 							peaks_t <- c()
 						}
 						else if(rawData[second,1]==rawData[(second+1),1]) #if second isn't last in chromosome (3)
 						{
 							#remove anything below the index at second
-							reads_t <- reads_afterCO[(reads_afterCO[,1]==ch)&(reads_afterCO[,2]>=rawData[(second+1),2]),]
 							peaks_t <- peaks_afterCO[(peaks_afterCO[,1]==ch)&(peaks_afterCO[,2]>=rawData[(second+1),2]),]
 						}
 					}
 					else #if second is last line of the file (7)
 					{
-						reads_t <- c()
 						peaks_t <- c()
 					}	
 				}
@@ -626,24 +563,20 @@ ChIPSeqCorContacts_forReads <- function(Experiments_4C,rearranged_rawData,ChIPse
 						if(rawData[second,1]!=rawData[(second+1),1]) #if second is the last in chromosome (6)
 						{
 							#remove anything above the index at first
-							reads_t <- reads_afterCO[(reads_afterCO[,1]==ch)&(reads_afterCO[,2]<=rawData[(first-1),2]),]
 							peaks_t <- peaks_afterCO[(peaks_afterCO[,1]==ch)&(peaks_afterCO[,2]<=rawData[(first-1),2]),]
 						}
 						else if(rawData[second,1]==rawData[(second+1),1]) #if second isn't last in chromosome (5)
 						{
 							#remove anything above the index at first and below the index at second
-							reads_t <- reads_afterCO[(reads_afterCO[,1]==ch)&((reads_afterCO[,2]<=rawData[(first-1),2])|(reads_afterCO[,2]>=rawData[(second+1),2])),]
 							peaks_t <- peaks_afterCO[(peaks_afterCO[,1]==ch)&((peaks_afterCO[,2]<=rawData[(first-1),2])|(peaks_afterCO[,2]>=rawData[(second+1),2])),]
 						}
 					}
 					else #if second is last line of the file (8)
 					{
 						#remove anything above the index at first
-						reads_t <- reads_afterCO[(reads_afterCO[,1]==ch)&(reads_afterCO[,2]<=rawData[(first-1),2]),]
 						peaks_t <- peaks_afterCO[(peaks_afterCO[,1]==ch)&(peaks_afterCO[,2]<=rawData[(first-1),2]),]
 					}	
 				}
-				reads_fin <- rbind(reads_fin,reads_t)	
 				peaks_fin <- rbind(peaks_fin,peaks_t)
 				pointer <- pointer + 1
 			}
@@ -651,19 +584,69 @@ ChIPSeqCorContacts_forReads <- function(Experiments_4C,rearranged_rawData,ChIPse
 			#adding the last chromosomes data (if there are any) that didn't get the section removal treatment
 			while(pointer<=numOFchroms)
 			{
-				reads_t <- reads_afterCO[reads_afterCO[,1]==all_chroms[pointer],]
-				reads_fin <- rbind(reads_fin,reads_t)	
 				peaks_t <- peaks_afterCO[peaks_afterCO[,1]==all_chroms[pointer],]
 				peaks_fin <- rbind(peaks_fin,peaks_t)
 				pointer <- pointer + 1
 			}
 
-			reads_afterCO <- reads_fin
-			rownames(reads_afterCO) <- seq(length=nrow(reads_afterCO))
-			
 			peaks_afterCO <- peaks_fin
 			rownames(peaks_afterCO) <- seq(length=nrow(peaks_afterCO))
+			
+			#this is for removing sections from the raw data			
+			rawData_temp <- rawData_temp[rawData_temp[,ncol(rawData_temp)]==1,-ncol(rawData_temp)]
+			rownames(rawData_temp) <- seq(length=nrow(rawData_temp))			
 		}
+
+		#applying the cutoff to the raw data	
+		if(ans4 == 1) #whole genome
+		{
+			reads_afterCO <- rawData_temp[rawData_temp[,3]>=CO1,]
+		}
+		else if(ans4 == 2) #trans
+		{
+			reads_afterCO <- c()
+			for(k in 1:numOFchroms) 
+			{
+				if(k!=cis)
+				{
+					reads_temp <- rawData_temp[rawData_temp[,1]==k & rawData_temp[,3]>=CO1,]
+					reads_afterCO <- rbind(reads_afterCO,reads_temp)
+				}
+				else
+				{
+					reads_temp <- rawData_temp[rawData_temp[,1]==k,]
+					reads_afterCO <- rbind(reads_afterCO,reads_temp)
+				}
+			}
+		}
+		else if(ans4 == 3) #cis or each chromosome separately
+		{		
+			reads_afterCO <- c()
+			for(k in 1:numOFchroms) 
+			{
+				if(ans8 == 1) #only cis
+				{
+					if(k==cis)
+					{
+						reads_temp <- rawData_temp[rawData_temp[,1]==k & rawData_temp[,3]>=CO1,]
+						reads_afterCO <- rbind(reads_afterCO,reads_temp)
+					}
+					else
+					{
+						reads_temp <- rawData_temp[rawData_temp[,1]==k,]
+						reads_afterCO <- rbind(reads_afterCO,reads_temp)
+					}
+				}
+				else #each chromosome separately
+				{
+					reads_temp <- rawData_temp[rawData_temp[,1]==k & rawData_temp[,3]>=seperate_CO1[k],]
+					reads_afterCO <- rbind(reads_afterCO,reads_temp)
+				}	
+			}
+		} 
+
+		#adjusting the row numbers
+		rownames(reads_afterCO) <- seq(length=nrow(reads_afterCO))
 		
 		if(z == 1) #maybe i could remove this condition and have that every time you could enter which ever chrom you want, even different ones
 		{

@@ -256,56 +256,14 @@ ChIPSeqCorContacts <- function(Experiments_4C,rearranged_rawData,ChIPseqVScontac
 			system(paste("bedtools makewindows -g ~/Analyze4C/temp/genome_sizes_temp.txt -w",winSize,"> ~/Analyze4C/temp/windows.bed"))
 		}
 		
-		#applying a cutoff to the p-score data
+		#getting the cutoff for the p-score data
 		ans8 <- as.integer(readline(prompt=cat("\nenter the number of what type of cutoff method you would like to do for the p-score:\n\n1) all chromosomes with the same cutoff (in p-score)\n2) all chromosomes with the same cutoff percentage\n\n")))
 		if(ans8 == 1)
 		{
 			CO1 <- as.numeric(readline(prompt=cat("\nplease enter a p-score cutoff. Anything above the cutoff will be considered a positive RE site:\n\n")))
 			CO_ps_type <- paste(CO_ps_type,";","fixed")
 			CO_ps <- paste(CO_ps,";",CO1)
-			
-			ans4 <- as.integer(readline(prompt=cat("\nshould the cutoff be applied to:\n1) the whole genome\n2) all trans\n3) cis\n\n")))
-			if(ans4 == 1) #whole genome
-			{
-				ps_afterCO <- ps[ps[,3]>=CO1,]
-				CO_ps_chroms <- paste(CO_ps_chroms,";","all")
-			}
-			else if(ans4 == 2) #trans
-			{
-				ps_afterCO <- c()
-				for(k in 1:numOFchroms) 
-				{
-					if(k!=cis)
-					{
-						ps_temp <- ps[ps[,1]==k & ps[,3]>=CO1,]
-						ps_afterCO <- rbind(ps_afterCO,ps_temp)
-					}
-					else
-					{
-						ps_temp <- ps[ps[,1]==k,]
-						ps_afterCO <- rbind(ps_afterCO,ps_temp)
-					}
-				}
-				CO_ps_chroms <- paste(CO_ps_chroms,";","trans")
-			}
-			else if(ans4 == 3) #each chromosome separately
-			{		
-				ps_afterCO <- c()
-				for(k in 1:numOFchroms) 
-				{
-					if(k==cis)
-					{
-						ps_temp <- ps[ps[,1]==k & ps[,3]>=CO1,]
-						ps_afterCO <- rbind(ps_afterCO,ps_temp)
-					}
-					else
-					{
-						ps_temp <- ps[ps[,1]==k,]
-						ps_afterCO <- rbind(ps_afterCO,ps_temp)
-					}
-				}
-				CO_ps_chroms <- paste(CO_ps_chroms,";","cis")
-			}				
+			ans4 <- as.integer(readline(prompt=cat("\nshould the cutoff be applied to:\n1) the whole genome\n2) all trans\n3) only cis\n\n")))
 		}
 		else
 		{
@@ -313,47 +271,29 @@ ChIPSeqCorContacts <- function(Experiments_4C,rearranged_rawData,ChIPseqVScontac
 			CO_ps_type <- paste(CO_ps_type,";","top percent per chromosome")
 			CO_ps <- paste(CO_ps,";",ps_COper)
 
-			ans4 <- as.integer(readline(prompt=cat("\nshould the cutoff percentage be of:\n1) the whole genome\n2) all trans\n3) each chromosome separately\n\n")))
+			ans4 <- as.integer(readline(prompt=cat("\nshould the cutoff percentage be of and applied to:\n1) the whole genome\n2) all trans\n3) each chromosome separately\n\n")))
+
+			#getting the actual cutoffs (we do this here since we need to consider the translocated areas before removing them, if there are any, in order to calculate the cutoffs)
 			if(ans4 == 1) #whole genome
 			{
 				CO1 <- quantile(ps[,3],ps_COper)
-				ps_afterCO <- ps[ps[,3]>=CO1,]
 				CO_ps_chroms <- paste(CO_ps_chroms,";","all")
 			}
 			else if(ans4 == 2) #trans
 			{
-				ps_afterCO <- c()
 				CO1 <- quantile(ps[ps[,1]!=cis,3],ps_COper)
-				for(k in 1:numOFchroms) 
-				{
-					if(k!=cis)
-					{
-						ps_temp <- ps[ps[,1]==k & ps[,3]>=CO1,]
-						ps_afterCO <- rbind(ps_afterCO,ps_temp)
-					}
-					else
-					{
-						ps_temp <- ps[ps[,1]==k,]
-						ps_afterCO <- rbind(ps_afterCO,ps_temp)
-					}
-				}
 				CO_ps_chroms <- paste(CO_ps_chroms,";","trans")
 			}
 			else if(ans4 == 3) #each chromosome separately
-			{		
-				ps_afterCO <- c()
+			{
+				seperate_CO1 <- rep(0,numOFchroms)
 				for(k in 1:numOFchroms) 
 				{
-					CO1 <- quantile(ps[ps[,1]==k,3],ps_COper)
-					ps_temp <- ps[ps[,1]==k & ps[,3]>=CO1,]
-					ps_afterCO <- rbind(ps_afterCO,ps_temp)
+					seperate_CO1[k] <- quantile(ps[ps[,1]==k,3],ps_COper)
 				}
-				CO_ps_chroms <- paste(CO_ps_chroms,";","each chromosome separately")	
+				CO_ps_chroms <- paste(CO_ps_chroms,";","each chromosome separately")				
 			}				
 		}
-					
-		#adjusting the row numbers
-		rownames(ps_afterCO) <- seq(length=nrow(ps_afterCO))
 		
 		#choosing the value from which the cutoffs are created and the value which is going to be used for each peak above and equal to the cutoff
 		cat("\napplying cutoffs to the peaks data:\n")
@@ -508,7 +448,7 @@ ChIPSeqCorContacts <- function(Experiments_4C,rearranged_rawData,ChIPseqVScontac
 		#adjusting the row numbers			
 		rownames(peaks_afterCO) <- seq(length=nrow(peaks_afterCO))
 		
-		#removing the translocated areas from 'ps_afterCO' and 'peaks_afterCO' if they were switched
+		#removing the translocated areas from 'rawData' and 'peaks_afterCO' if they were switched
 		if(translocated_flag == 1)
 		{
 			cat("\nremoving translocated areas:\nthe purpose of this is in order to be able and intersect the p-scores with peaks bands\n")
@@ -568,8 +508,10 @@ ChIPSeqCorContacts <- function(Experiments_4C,rearranged_rawData,ChIPseqVScontac
 			all_chroms <- seq(numOFchroms)
 			pointer <- 1
 			peaks_fin <- c()
-			ps_fin <- c()
-			rawData_removed <- c() 
+			
+			#this is for removing sections from the raw data
+			rawData_removed <- cbind(raw_dat,rep(1,nrow(raw_dat)))
+			
 			for(r in seq(1,length(lin_nums2),by=2))
 			{
 				first <- lin_nums2[r]
@@ -580,20 +522,18 @@ ChIPSeqCorContacts <- function(Experiments_4C,rearranged_rawData,ChIPseqVScontac
 					cat("\nerror:there is something wrong with the line numbers entered into the file 'rearranged_rawData'.\nthe first and last lines must be of the same chromosome\n\n")
 					return()
 				}
+
+				#this is for removing sections from the raw data
+				rawData_removed[first:second,ncol(rawData_removed)] <- 0			
 				
 				#taking all the chromosomes that aren't getting the removal treatment, and adding them to the peaks and ps data
 				while(all_chroms[pointer]!=ch)
 				{
-					ps_t <- ps_afterCO[ps_afterCO[,1]==all_chroms[pointer],]
-					ps_fin <- rbind(ps_fin,ps_t)
 					peaks_t <- peaks_afterCO[peaks_afterCO[,1]==all_chroms[pointer],]
 					peaks_fin <- rbind(peaks_fin,peaks_t)
-					rawData_removed_temp <- raw_dat[raw_dat[,1]==all_chroms[pointer],] #creating the raw data removed data frame 
-					rawData_removed <- rbind(rawData_removed,rawData_removed_temp) 					
 					pointer <- pointer + 1
 				}
 				
-				ps_t <- c() #just in case no conditions are met, this way we won't get the previous ps_t (this shouldn't happen, it's just a precaution)
 				peaks_t <- c() #just in case no conditions are met, this way we won't get the previous peaks_t (this shouldn't happen, it's just a precaution)
 				#getting the indices to remove
 				if(first==1)#if first is the 1st line in the file
@@ -602,19 +542,16 @@ ChIPSeqCorContacts <- function(Experiments_4C,rearranged_rawData,ChIPseqVScontac
 					{			
 						if(raw_dat[second,1]!=raw_dat[(second+1),1]) #if it covers all the chromosome (if second is the last in chromosome) (1)
 						{
-							ps_t <- c()
 							peaks_t <- c()
 						}
 						else if(raw_dat[second,1]==raw_dat[(second+1),1]) #if second isn't the last of the chromosome (2)
 						{
 							#remove anything below the index at second
-							ps_t <- ps_afterCO[(ps_afterCO[,1]==ch)&(ps_afterCO[,2]>=raw_dat[(second+1),2]),]					
 							peaks_t <- peaks_afterCO[(peaks_afterCO[,1]==ch)&(peaks_afterCO[,2]>=raw_dat[(second+1),2]),]
 						}
 					}	
 					else #the line numbers cover all the data, so none of it is used (9)
 					{
-						ps_t <- c()	
 						peaks_t <- c()
 					}				
 				}
@@ -624,19 +561,16 @@ ChIPSeqCorContacts <- function(Experiments_4C,rearranged_rawData,ChIPseqVScontac
 					{
 						if(raw_dat[second,1]!=raw_dat[(second+1),1]) #if second is the last in chromosome (4)
 						{
-							ps_t <- c()
 							peaks_t <- c()
 						}
 						else if(raw_dat[second,1]==raw_dat[(second+1),1]) #if second isn't last in chromosome (3)
 						{
 							#remove anything below the index at second
-							ps_t <- ps_afterCO[(ps_afterCO[,1]==ch)&(ps_afterCO[,2]>=raw_dat[(second+1),2]),]
 							peaks_t <- peaks_afterCO[(peaks_afterCO[,1]==ch)&(peaks_afterCO[,2]>=raw_dat[(second+1),2]),]
 						}
 					}
 					else #if second is last line of the file (7)
 					{
-						ps_t <- c()
 						peaks_t <- c()
 					}	
 				}
@@ -647,49 +581,38 @@ ChIPSeqCorContacts <- function(Experiments_4C,rearranged_rawData,ChIPseqVScontac
 						if(raw_dat[second,1]!=raw_dat[(second+1),1]) #if second is the last in chromosome (6)
 						{
 							#remove anything above the index at first
-							ps_t <- ps_afterCO[(ps_afterCO[,1]==ch)&(ps_afterCO[,2]<=raw_dat[(first-1),2]),]
 							peaks_t <- peaks_afterCO[(peaks_afterCO[,1]==ch)&(peaks_afterCO[,2]<=raw_dat[(first-1),2]),]
 						}
 						else if(raw_dat[second,1]==raw_dat[(second+1),1]) #if second isn't last in chromosome (5)
 						{
 							#remove anything above the index at first and below the index at second
-							ps_t <- ps_afterCO[(ps_afterCO[,1]==ch)&((ps_afterCO[,2]<=raw_dat[(first-1),2])|(ps_afterCO[,2]>=raw_dat[(second+1),2])),]
 							peaks_t <- peaks_afterCO[(peaks_afterCO[,1]==ch)&((peaks_afterCO[,2]<=raw_dat[(first-1),2])|(peaks_afterCO[,2]>=raw_dat[(second+1),2])),]
 						}
 					}
 					else #if second is last line of the file (8)
 					{
 						#remove anything above the index at first
-						ps_t <- ps_afterCO[(ps_afterCO[,1]==ch)&(ps_afterCO[,2]<=raw_dat[(first-1),2]),]
 						peaks_t <- peaks_afterCO[(peaks_afterCO[,1]==ch)&(peaks_afterCO[,2]<=raw_dat[(first-1),2]),]
 					}	
 				}
-				ps_fin <- rbind(ps_fin,ps_t)	
 				peaks_fin <- rbind(peaks_fin,peaks_t)
-				rawData_removed_temp <- raw_dat[-first:-second,] 
-				rawData_removed <- rbind(rawData_removed,rawData_removed_temp[rawData_removed_temp[,1]==ch,]) 				
 				pointer <- pointer + 1
 			}
 
 			#adding the last chromosomes data (if there are any) that didn't get the section removal treatment
 			while(pointer<=numOFchroms)
 			{
-				ps_t <- ps_afterCO[ps_afterCO[,1]==all_chroms[pointer],]
-				ps_fin <- rbind(ps_fin,ps_t)	
 				peaks_t <- peaks_afterCO[peaks_afterCO[,1]==all_chroms[pointer],]
 				peaks_fin <- rbind(peaks_fin,peaks_t)
-				rawData_removed_temp <- raw_dat[raw_dat[,1]==all_chroms[pointer],] 
-				rawData_removed <- rbind(rawData_removed,rawData_removed_temp) 				
 				pointer <- pointer + 1
 			}
-
-			ps_afterCO <- ps_fin
-			rownames(ps_afterCO) <- seq(length=nrow(ps_afterCO))
 			
 			peaks_afterCO <- peaks_fin
 			rownames(peaks_afterCO) <- seq(length=nrow(peaks_afterCO))
 			
-			rownames(rawData_removed) <- seq(length=nrow(rawData_removed)) 
+			#this is for removing sections from the raw data			
+			rawData_removed <- rawData_removed[rawData_removed[,ncol(rawData_removed)]==1,-ncol(rawData_removed)]
+			rownames(rawData_removed) <- seq(length=nrow(rawData_removed))	
 		}
 		
 		if(z == 1) #maybe i could remove this condition and have that every time you could enter which ever chrom you want, even different ones
@@ -700,21 +623,21 @@ ChIPSeqCorContacts <- function(Experiments_4C,rearranged_rawData,ChIPseqVScontac
 		#getting the p-score and peaks data by chromosome according to the request of the user, and also the chromosomes chosen
 		if(choice2 == 1) #all chromosomes
 		{
-			ps_dat <- ps_afterCO
+			ps_dat <- ps
 			peaks_dat <- peaks_afterCO
 			chroms <- c(1:numOFchroms)
 			int_chroms <- "all" #this will be entered later in 'ChIPseqVScontacts_correlation_plots.txt'
 		}
 		else if(choice2 == 2) #trans
 		{
-			ps_dat <- ps_afterCO[ps_afterCO[,1] != cis,]
+			ps_dat <- ps[ps[,1] != cis,]
 			peaks_dat <- peaks_afterCO[peaks_afterCO[,1] != cis,]
 			chroms <- Filter(function(x) x!=cis,1:numOFchroms) #this here excludes cis chromosome number in the sequence, another way would be - (1:numOFchroms)[-cis]
 			int_chroms <- "trans" #this will be entered later in 'ChIPseqVScontacts_correlation_plots.txt'
 		}
 		else if(choice2 == 3) #cis
 		{
-			ps_dat <- ps_afterCO[ps_afterCO[,1] == cis,]
+			ps_dat <- ps[ps[,1] == cis,]
 			peaks_dat <- peaks_afterCO[peaks_afterCO[,1] == cis,]			
 			chroms <- cis
 			int_chroms <- "cis" #this will be entered later in 'ChIPseqVScontacts_correlation_plots.txt'
@@ -722,7 +645,7 @@ ChIPSeqCorContacts <- function(Experiments_4C,rearranged_rawData,ChIPseqVScontac
 		else if(choice2 == 4) #by chromosome
 		{
 			chr_chosen <- as.integer(readline(prompt=cat("\nchoose a chromosome you would like to use:\n\n")))
-			ps_dat <- ps_afterCO[ps_afterCO[,1] == chr_chosen,]
+			ps_dat <- ps[ps[,1] == chr_chosen,]
 			peaks_dat <- peaks_afterCO[peaks_afterCO[,1] == chr_chosen,]			
 			chroms <- chr_chosen
 			int_chroms <- paste("chr",chr_chosen,sep="") #this will be entered later in 'ChIPseqVScontacts_correlation_plots.txt'
@@ -821,15 +744,109 @@ ChIPSeqCorContacts <- function(Experiments_4C,rearranged_rawData,ChIPseqVScontac
 		}
 		rawData_bed <- data.frame(rawData_bed)
 		write.table(rawData_bed,"~/Analyze4C/temp/rawData_bed.bed",row.names=FALSE,col.names=FALSE,quote=FALSE,sep="\t") #creating a temp file of the rawData data chosen
-		system("bedtools intersect -a ~/Analyze4C/temp/ps_bed.bed -b ~/Analyze4C/temp/rawData_bed.bed -loj > ~/Analyze4C/temp/reads.bed")
+
+		#removing the sections from the data:
+		
+		#intersecting the bed files so that we get the indices that aren't removed (since the way we removed was with line numbers of the files, we can't just remove them from the p-score data since we removed some lines from the cis when calculating the p-scores)
+		system("bedtools intersect -a ~/Analyze4C/temp/ps_bed.bed -b ~/Analyze4C/temp/rawData_bed.bed > ~/Analyze4C/temp/out.bed")
+		system("bedtools intersect -a ~/Analyze4C/temp/ps_bed.bed -b ~/Analyze4C/temp/rawData_bed.bed -c > ~/Analyze4C/temp/out2.bed") #this output will have all the same lines as psBed.bed but with an indication if the indices intersected or not (0 not intersected, 1 intersected)
+		#there was a problem with intersected repeats, where if the same indices appeared in the translocated area that needs to be removed and an area that doesn'table
+		#this will cause repeats in the intersections and some indices to be out of order
+		#i couldn't figure out an automatic way to fix this
+		#for now the user will fix it manually
+
+		cat("\nview the 'out.bed' file for any repeats of intesections.\nthis happens if there is an index that appears in the translocated area and in areas that aren't.\n")
+		cat("bedtools doesn't know how to distinguish between 'good' intersections like these and 'bad' ones.\nthese repeats should be at the beginning of the chromosome (if the translocation occured on the left telomere of the chromosome.\n")
+		cat("you could confirm that these are the lines that need to be erased by looking at the 'out2.bed' which shows that there are some indices that appear early on and in translocated areas that have been intersected.\n")
+		cat("most chances are that you will see a '1' at the line of some indices with other indices that have a '0' surrounding them\n")
+
+		lns <- c()
+		fl <- 1
+		cat("\n\nentering the lines that need to be removed:\n")
+		while(fl == 1)
+		{
+			ans <- readline(prompt=cat("\nare there any (more) lines that need to be erased?\ny/n\n\n"))
+			if(ans == "y")
+			{
+				new_ln <- as.integer(readline(prompt=cat("\nenter the line number that needs to be removed, as it appears in 'out.bed':\n")))
+				lns <- c(lns,new_ln)
+			}
+			else
+			{
+				fl <- 0
+			}
+		}
+
+		ps_bed2 <- read.table("~/Analyze4C/temp/out.bed")
+
+		if(!is.null(lns))
+		{
+			ps_bed2 <- ps_bed2[-1*lns,] #removing the specific lines
+		}
+
+		#applying the cutoff to the p-scores	
+		if(ans4 == 1) #whole genome
+		{
+			ps_bed_afterCO <- ps_bed2[ps_bed2[,4]>=CO1,]
+		}
+		else if(ans4 == 2) #trans
+		{
+			ps_bed_afterCO <- c()
+			for(k in 1:numOFchroms) 
+			{
+				if(k!=cis)
+				{
+					ps_temp <- ps_bed2[ps_bed2[,1]==k & ps_bed2[,4]>=CO1,]
+					ps_bed_afterCO <- rbind(ps_bed_afterCO,ps_temp)
+				}
+				else
+				{
+					ps_temp <- ps_bed2[ps_bed2[,1]==k,]
+					ps_bed_afterCO <- rbind(ps_bed_afterCO,ps_temp)
+				}
+			}
+		}
+		else if(ans4 == 3) #cis or each chromosome separately
+		{		
+			ps_bed_afterCO <- c()
+			for(k in 1:numOFchroms) 
+			{
+				if(ans8 == 1) #only cis
+				{
+					if(k==cis)
+					{
+						ps_temp <- ps_bed2[ps_bed2[,1]==k & ps_bed2[,4]>=CO1,]
+						ps_bed_afterCO <- rbind(ps_bed_afterCO,ps_temp)
+					}
+					else
+					{
+						ps_temp <- ps_bed2[ps_bed2[,1]==k,]
+						ps_bed_afterCO <- rbind(ps_bed_afterCO,ps_temp)
+					}
+				}
+				else #each chromosome separately
+				{
+					ps_temp <- ps_bed2[ps_bed2[,1]==k & ps_bed2[,4]>=seperate_CO1[k],]
+					ps_bed_afterCO <- rbind(ps_bed_afterCO,ps_temp)
+				}	
+			}
+		}
+
+		#adjusting the row numbers
+		rownames(ps_bed_afterCO) <- seq(length=nrow(ps_bed_afterCO))
+		
+		write.table(ps_bed_afterCO,"~/Analyze4C/temp/ps_bed_afterCO.bed",row.names=FALSE,col.names=FALSE,quote=FALSE,sep="\t")	
+		#ps_dat2 <- cbind(ps_bed2[,1],ps_bed2[,2],ps_bed2[,4])
+		
+		system("bedtools intersect -a ~/Analyze4C/temp/ps_bed_afterCO.bed -b ~/Analyze4C/temp/rawData_bed.bed -loj > ~/Analyze4C/temp/reads.bed")
 		reads <- read.table("~/Analyze4C/temp/reads.bed",header=FALSE,stringsAsFactors=FALSE,sep="\t")
-		reads_bed <- as.data.frame(cbind(ps_bed[,1],ps_bed[,2],ps_bed[,3],reads[,8]))
+		reads_bed <- as.data.frame(cbind(ps_bed_afterCO[,1],ps_bed_afterCO[,2],ps_bed_afterCO[,3],reads[,8]))
 		write.table(reads_bed,"~/Analyze4C/temp/reads_bed.bed",row.names=FALSE,col.names=FALSE,quote=FALSE,sep="\t")
 		
 		#intersecting	
 		if(choice4 == 1) #if by individual
 		{
-			system("bedtools intersect -a ~/Analyze4C/temp/ps_bed.bed -b ~/Analyze4C/temp/peaks.bed -wo > ~/Analyze4C/temp/intersected.bed")			
+			system("bedtools intersect -a ~/Analyze4C/temp/ps_bed_afterCO.bed -b ~/Analyze4C/temp/peaks.bed -wo > ~/Analyze4C/temp/intersected.bed")			
 			intersected <- read.table("~/Analyze4C/temp/intersected.bed")	
 			intersected_pairs <- as.data.frame(cbind(intersected[,4],intersected[,8]))
 			
@@ -839,7 +856,7 @@ ChIPSeqCorContacts <- function(Experiments_4C,rearranged_rawData,ChIPseqVScontac
 		}	
 		else #if by window
 		{	
-			system("bedtools map -a ~/Analyze4C/temp/windows.bed -b ~/Analyze4C/temp/ps_bed.bed -c 4 > ~/Analyze4C/temp/ps_windows.bed")
+			system("bedtools map -a ~/Analyze4C/temp/windows.bed -b ~/Analyze4C/temp/ps_bed_afterCO.bed -c 4 > ~/Analyze4C/temp/ps_windows.bed")
 			ps_windows <- read.table("~/Analyze4C/temp/ps_windows.bed",header=FALSE,stringsAsFactors=FALSE,sep="\t")
 			ps_windows[ps_windows[,4]==".",4] <- 0
 			#write.table(ps_windows,"~/Analyze4C/temp/ps_windows.txt",row.names=FALSE,col.names=FALSE,quote=FALSE,sep="\t")
@@ -909,9 +926,12 @@ ChIPSeqCorContacts <- function(Experiments_4C,rearranged_rawData,ChIPseqVScontac
 			{
 				z <- z + 1				
 				system("rm ~/Analyze4C/temp/ps_bed.bed")
+				system("rm ~/Analyze4C/temp/ps_bed_afterCO.bed")				
 				system("rm ~/Analyze4C/temp/reads.bed")
 				system("rm ~/Analyze4C/temp/reads_bed.bed")
 				system("rm ~/Analyze4C/temp/rawData_bed.bed")
+				system("rm ~/Analyze4C/temp/out.bed")
+				system("rm ~/Analyze4C/temp/out2.bed")			
 				if(choice4 == 1)
 				{
 					system("rm ~/Analyze4C/temp/intersected.bed")
