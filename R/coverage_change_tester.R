@@ -129,9 +129,9 @@ coverage_change_tester <- function(Experiments_4C,coverageVSfmeasure_plots,rearr
 	}
 	else if(choice0 == 4)
 	{
-		first_min <- as.numeric(readline(prompt=cat("\nenter the first number of minimum RE sites you would like be tested:\n\n")))
-		last_min_reads <- as.numeric(readline(prompt=cat("\nenter the last number of minimum RE sites you would like be tested:\n\n")))
-		min_read_stp <- as.integer(readline(prompt=cat("\nhow many RE sites should be added per step?\n\n")))
+		first_min <- as.numeric(readline(prompt=cat("\nenter the first amount of minimum number of reads per RE site considered positive you would like be tested:\n\n")))
+		last_min_reads <- as.numeric(readline(prompt=cat("\nenter the last amount of minimum number of reads per RE site considered positive you would like be tested:\n\n")))
+		min_read_stp <- as.integer(readline(prompt=cat("\nhow many number of reads should be added per step?\n\n")))
 	}
 		
 	#asking for what chromosomes will there be coverage removal

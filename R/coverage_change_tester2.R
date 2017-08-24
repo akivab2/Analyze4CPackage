@@ -191,9 +191,9 @@ coverage_change_tester2 <- function(Experiments_4C,coverageVSfmeasure_plots,rear
 	}
 	else if(choice0 == 4)
 	{
-		first_min <- as.numeric(readline(prompt=cat("\nenter the first number of minimum RE sites you would like be tested:\n\n")))
-		last_min_reads <- as.numeric(readline(prompt=cat("\nenter the last number of minimum RE sites you would like be tested:\n\n")))
-		min_read_stp <- as.integer(readline(prompt=cat("\nhow many RE sites should be added per step?\n\n")))
+		first_min <- as.numeric(readline(prompt=cat("\nenter the first amount of minimum number of reads per RE site considered positive you would like be tested:\n\n")))
+		last_min_reads <- as.numeric(readline(prompt=cat("\nenter the last amount of minimum number of reads per RE site considered positive you would like be tested:\n\n")))
+		min_read_stp <- as.integer(readline(prompt=cat("\nhow many number of reads should be added per step?\n\n")))
 	}
 			
 	#asking for what chromosomes will there be coverage removal
@@ -1250,7 +1250,7 @@ else if(choice4 == 4) #specific chromosome
 		#creating a plot of the recall, precision, and f-measure data. the x axis is backwards (the high values are on the left and lower on the right)
 		print(ggplot2::ggplot(data=prf_final,ggplot2::aes(x=coverage,y=result,group=type)) + ggplot2::scale_x_reverse() + ggplot2::geom_line(ggplot2::aes(color=type)) + ggplot2::geom_point())		
 	}
-	else if(choice0 == 4) #limited by coverage removal percentage
+	else if(choice0 == 4) #limited by minimum number of reads per RE site
 	{
 		for(cur_min_reads in seq(first_min,last_min_reads,by=min_read_stp))
 		{	
