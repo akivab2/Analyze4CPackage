@@ -93,6 +93,7 @@ main.menu <- function()
 		#creating raw data files (sgr files)
 			#inputs: 'Experiments_4C'
 			rawData.creator(Experiments_4C)
+			Experiments_4C <- createORget_Experiments_4C()
 			#setTOroot()
 		},
 		{
@@ -173,6 +174,7 @@ main.menu <- function()
 		{
 		#combining 2 raw data files to one
 			combineLanes(Experiments_4C)
+			Experiments_4C <- createORget_Experiments_4C()			
 		},
 		{
 		#create contact bands

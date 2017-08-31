@@ -86,7 +86,7 @@ coverage.changer.main_menu <- function(Experiments_4C,coverageChanged_Experiment
 				if(ans5=="y")
 				{
 					#getting the coverage stats
-					rawData.stats(Experiments_4C,raw_dat,file.name)	
+					rawData.stats(Experiments_4C,rawData,file.name)	
 				}
 				
 				#getting the percentage of coverage to be removed

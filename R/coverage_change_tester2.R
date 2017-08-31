@@ -733,7 +733,6 @@ else if(choice4 == 4) #specific chromosome
 		#creating a data frame of the recall, precision, and f-measure data
 		rownames(prf_all) <- seq(1,nrow(prf_all),1)
 		covs <- c(0,seq(stp,covPer_lim,stp))
-		covs <- paste(covs,"%",sep="")
 		len <- length(covs)
 		colnames(prf_all) <- c("precision","recall","f.measure")
 		prf_prec <- data.frame(rep("precision",len),subset(prf_all,select="precision"),covs)
@@ -745,7 +744,7 @@ else if(choice4 == 4) #specific chromosome
 		prf_final <- rbind(prf_prec,prf_rec,prf_fm)
 		rownames(prf_final) <- seq(1,nrow(prf_final),1)
 
-		print(ggplot2::ggplot(data=prf_final,ggplot2::aes(x=coverage.removed,y=result,group=type)) + ggplot2::geom_line(ggplot2::aes(color=type)) + ggplot2::geom_point())		
+		print(ggplot2::ggplot(data=prf_final,ggplot2::aes(x=coverage.removed,y=result,group=type)) + ggplot2::geom_line(ggplot2::aes(color=type)) + ggplot2::geom_point()  + ggplot2::labs(x="coverage removed (%)"))		
 	}
 	else if(choice0 == 2)#limited by f-measure
 	{
@@ -998,7 +997,6 @@ else if(choice4 == 4) #specific chromosome
 		#creating a data frame of the recall, precision, and f-measure data
 		rownames(prf_all) <- seq(1,nrow(prf_all),1)
 		covs <- c(0,seq(stp,covPer_lim,stp))
-		covs <- paste(covs,"%",sep="")
 		len <- length(covs)
 		colnames(prf_all) <- c("precision","recall","f.measure")
 		prf_prec <- data.frame(rep("precision",len),subset(prf_all,select="precision"),covs)
@@ -1010,7 +1008,7 @@ else if(choice4 == 4) #specific chromosome
 		prf_final <- rbind(prf_prec,prf_rec,prf_fm)
 		rownames(prf_final) <- seq(1,nrow(prf_final),1)	
 
-		print(ggplot2::ggplot(data=prf_final,ggplot2::aes(x=coverage.removed,y=result,group=type)) + ggplot2::geom_line(ggplot2::aes(color=type)) + ggplot2::geom_point())				
+		print(ggplot2::ggplot(data=prf_final,ggplot2::aes(x=coverage.removed,y=result,group=type)) + ggplot2::geom_line(ggplot2::aes(color=type)) + ggplot2::geom_point() + ggplot2::labs(x="coverage removed (%)"))				
 	}
 	else if(choice0 == 3) #limited by coverage
 	{

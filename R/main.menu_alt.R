@@ -145,6 +145,7 @@ main.menu_alt <- function()
 		#calculating the raw data stats
 			#inputs: 'Experiments_4C'
 			rawData.stats(Experiments_4C)
+			Experiments_4C <- createORget_Experiments_4C()			
 			#setTOroot()
 		}
 		else if(choice == 10)
@@ -214,6 +215,7 @@ main.menu_alt <- function()
 		{
 		#combining 2 raw data files to one
 			combineLanes(Experiments_4C)
+			Experiments_4C <- createORget_Experiments_4C()
 		}
 		else if(choice == 19)
 		{

@@ -535,7 +535,7 @@ else if(choice4 == 4) #specific chromosome
 		prf_final <- rbind(prf_prec,prf_rec,prf_fm)
 		rownames(prf_final) <- seq(1,nrow(prf_final),1)
 
-		print(ggplot2::ggplot(data=prf_final,ggplot2::aes(x=coverage.removed,y=result,group=type)) + ggplot2::geom_line(ggplot2::aes(color=type)) + ggplot2::geom_point())		
+		print(ggplot2::ggplot(data=prf_final,ggplot2::aes(x=coverage.removed,y=result,group=type)) + ggplot2::geom_line(ggplot2::aes(color=type)) + ggplot2::geom_point() + ggplot2::labs(x="coverage removed (%)"))		
 	}
 	else if(choice0 == 2)#limited by f-measure
 	{
@@ -775,7 +775,7 @@ else if(choice4 == 4) #specific chromosome
 		prf_final <- rbind(prf_prec,prf_rec,prf_fm)
 		rownames(prf_final) <- seq(1,nrow(prf_final),1)	
 
-		print(ggplot2::ggplot(data=prf_final,ggplot2::aes(x=coverage.removed,y=result,group=type)) + ggplot2::geom_line(ggplot2::aes(color=type)) + ggplot2::geom_point())				
+		print(ggplot2::ggplot(data=prf_final,ggplot2::aes(x=coverage.removed,y=result,group=type)) + ggplot2::geom_line(ggplot2::aes(color=type)) + ggplot2::geom_point() + ggplot2::labs(x="coverage removed (%)"))				
 	}
 	else if(choice0 ==  3) #limited by coverage
 	{
