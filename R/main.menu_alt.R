@@ -285,7 +285,7 @@ main.menu_alt <- function()
 		{
 		#ChIP-seq aligner and peaks bed files creator
 			#first we get the data from the file ChIPseq_data.txt and MACS_outputs.txt
-			ChIPseq_data <- read.table("RNAseq_data.txt",header=TRUE,stringsAsFactors=FALSE,sep="\t")
+			ChIPseq_data <- read.table("ChIPseq_data.txt",header=TRUE,stringsAsFactors=FALSE,sep="\t")
 			MACS_outputs <- read.table("MACS_outputs.txt",header=TRUE,stringsAsFactors=FALSE,sep="\t")
 			
 			ChIPseq_aligner(ChIPseq_data,MACS_outputs)
