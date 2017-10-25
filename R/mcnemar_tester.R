@@ -203,28 +203,83 @@ mcnemar_tester <- function(query=0,fileA=0,fileB=0)
 			}
 		}
 	}
-	
+
 	#merging the fragments the overlap, this prevents multiple intersections of the same sections
 	system(paste("bedtools merge -i",query,"> ~/Analyze4C/temp/query_merged.bed"))
 	system(paste("bedtools merge -i",fileA,"> ~/Analyze4C/temp/fileA_merged.bed"))
 	system(paste("bedtools merge -i",fileB,"> ~/Analyze4C/temp/fileB_merged.bed"))
-
-	#intersections:	
-	system("bedtools intersect -a ~/Analyze4C/temp/query_merged.bed -b ~/Analyze4C/temp/query_merged.bed -wo > ~/Analyze4C/temp/int_query.txt")
-	int_query <- read.table("~/Analyze4C/temp/int_query.txt",header=FALSE,stringsAsFactors=FALSE)
-	sum_int_query <- sum(int_query[,7])
-	system("bedtools intersect -a ~/Analyze4C/temp/query_merged.bed -b ~/Analyze4C/temp/fileA_merged.bed -wo > ~/Analyze4C/temp/intA.txt")
-	intA <- read.table("~/Analyze4C/temp/intA.txt",header=FALSE,stringsAsFactors=FALSE)
-	sum_intA <- sum(intA[,7])
-	system("bedtools intersect -a ~/Analyze4C/temp/query_merged.bed -b ~/Analyze4C/temp/fileB_merged.bed -wo > ~/Analyze4C/temp/intB.txt")
-	intB <- read.table("~/Analyze4C/temp/intB.txt",header=FALSE,stringsAsFactors=FALSE)
-	sum_intB <- sum(intB[,7])	
-	system("bedtools intersect -a ~/Analyze4C/temp/fileA_merged.bed -b ~/Analyze4C/temp/fileB_merged.bed > ~/Analyze4C/temp/intAB.bed")
-	intAB <- read.table("~/Analyze4C/temp/intAB.bed",header=FALSE,stringsAsFactors=FALSE)
-	system("bedtools intersect -a ~/Analyze4C/temp/query_merged.bed -b ~/Analyze4C/temp/intAB.bed -wo > ~/Analyze4C/temp/intABQ.txt")
-	intABQ <- read.table("~/Analyze4C/temp/intABQ.txt",header=TRUE,stringsAsFactors=FALSE)
-	sum_intABQ <- sum(intABQ[,7])
 	
+	#intersections:	
+#	system("bedtools intersect -a ~/Analyze4C/temp/query_merged.bed -b ~/Analyze4C/temp/query_merged.bed -wo > ~/Analyze4C/temp/int_query.txt")
+#	int_query <- read.table("~/Analyze4C/temp/int_query.txt",header=FALSE,stringsAsFactors=FALSE)
+#	sum_int_query <- sum(int_query[,7])
+#	system("bedtools intersect -a ~/Analyze4C/temp/query_merged.bed -b ~/Analyze4C/temp/fileA_merged.bed -wo > ~/Analyze4C/temp/intA.txt")
+#	intA <- read.table("~/Analyze4C/temp/intA.txt",header=FALSE,stringsAsFactors=FALSE)
+#	sum_intA <- sum(intA[,7])
+#	system("bedtools intersect -a ~/Analyze4C/temp/query_merged.bed -b ~/Analyze4C/temp/fileB_merged.bed -wo > ~/Analyze4C/temp/intB.txt")
+#	intB <- read.table("~/Analyze4C/temp/intB.txt",header=FALSE,stringsAsFactors=FALSE)
+#	sum_intB <- sum(intB[,7])	
+#	system("bedtools intersect -a ~/Analyze4C/temp/fileA_merged.bed -b ~/Analyze4C/temp/fileB_merged.bed > ~/Analyze4C/temp/intAB.bed")
+#	intAB <- read.table("~/Analyze4C/temp/intAB.bed",header=FALSE,stringsAsFactors=FALSE)
+#	system("bedtools intersect -a ~/Analyze4C/temp/query_merged.bed -b ~/Analyze4C/temp/intAB.bed -wo > ~/Analyze4C/temp/intABQ.txt")
+#	intABQ <- read.table("~/Analyze4C/temp/intABQ.txt",header=TRUE,stringsAsFactors=FALSE)
+#	sum_intABQ <- sum(intABQ[,7])
+	
+	#intersections:
+	system("bedtools intersect -a ~/Analyze4C/temp/query_merged.bed -b ~/Analyze4C/temp/query_merged.bed -wo > ~/Analyze4C/temp/int_query.txt")	
+	if(file.info("~/Analyze4C/temp/int_query.txt")$size != 0)
+	{
+		int_query <- read.table("~/Analyze4C/temp/int_query.txt",header=FALSE,stringsAsFactors=FALSE)
+	}
+	else
+	{
+		int_query <- data.frame(0,0,0,0,0,0,0,0)
+	}
+	sum_int_query <- sum(int_query[,7])
+
+	system("bedtools intersect -a ~/Analyze4C/temp/query_merged.bed -b ~/Analyze4C/temp/fileA_merged.bed -wo > ~/Analyze4C/temp/intA.txt")
+	if(file.info("~/Analyze4C/temp/intA.txt")$size != 0)
+	{
+		intA <- read.table("~/Analyze4C/temp/intA.txt",header=FALSE,stringsAsFactors=FALSE)
+	}
+	else
+	{
+		intA <- data.frame(0,0,0,0,0,0,0,0)
+	}
+	sum_intA <- sum(intA[,7])
+
+	system("bedtools intersect -a ~/Analyze4C/temp/query_merged.bed -b ~/Analyze4C/temp/fileB_merged.bed -wo > ~/Analyze4C/temp/intB.txt")	
+	if(file.info("~/Analyze4C/temp/intB.txt")$size != 0)
+	{
+		intB <- read.table("~/Analyze4C/temp/intB.txt",header=FALSE,stringsAsFactors=FALSE)
+	}
+	else
+	{
+		intB <- data.frame(0,0,0,0,0,0,0,0)
+	}
+	sum_intB <- sum(intB[,7])	
+
+	system("bedtools intersect -a ~/Analyze4C/temp/fileA_merged.bed -b ~/Analyze4C/temp/fileB_merged.bed > ~/Analyze4C/temp/intAB.bed")
+	if(file.info("~/Analyze4C/temp/intAB.bed")$size != 0)
+	{
+		intAB <- read.table("~/Analyze4C/temp/intAB.bed",header=FALSE,stringsAsFactors=FALSE)
+	}
+	else
+	{
+		intAB <- data.frame(0,0,0,0,0,0,0,0)
+	}
+
+	system("bedtools intersect -a ~/Analyze4C/temp/query_merged.bed -b ~/Analyze4C/temp/intAB.bed -wo > ~/Analyze4C/temp/intABQ.txt")
+	if(file.info("~/Analyze4C/temp/intABQ.txt")$size != 0)
+	{
+		intABQ <- read.table("~/Analyze4C/temp/intABQ.txt",header=FALSE,stringsAsFactors=FALSE)
+	}
+	else
+	{
+		intABQ <- data.frame(0,0,0,0,0,0,0,0)
+	}
+	sum_intABQ <- sum(intABQ[,7])
+		
 	#calculating the sum of intersections of only intA, only intB, both, and neither:
 	only_intA <- sum_intA - sum_intABQ
 	only_intB <- sum_intB - sum_intABQ

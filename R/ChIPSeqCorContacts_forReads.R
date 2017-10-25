@@ -710,6 +710,15 @@ ChIPSeqCorContacts_forReads <- function(Experiments_4C,rearranged_rawData,ChIPse
 		if(choice4 == 1) #if by individual
 		{
 			system("bedtools intersect -a ~/Analyze4C/temp/reads_bed.bed -b ~/Analyze4C/temp/peaks.bed -wo > ~/Analyze4C/temp/intersected.bed")			
+
+			#if there were no intersections	(i think this is the best way to deal with a case like this)
+			if(file.info("~/Analyze4C/temp/intersected.bed")$size == 0)
+			{
+				cat("\nthere were no intersections between the reads and peaks data\n\n")
+				return()
+			}
+			
+			#if there were intersections:
 			intersected <- read.table("~/Analyze4C/temp/intersected.bed")	
 			intersected_pairs <- as.data.frame(cbind(intersected[,4],intersected[,8]))		
 		}	

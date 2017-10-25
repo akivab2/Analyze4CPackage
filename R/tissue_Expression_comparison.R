@@ -415,9 +415,24 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 	cat("\nintersecting the contact bands file and the expression data from the two files that you chose\nplease wait...\n\n")
 	system(paste("bedtools intersect -a ~/Analyze4C/temp/FPKM1_afterCO.bed -b ~/Analyze4C/contact_bands/",conts_filename," -wo > ~/Analyze4C/temp/expressionComparison1.bed",sep=""))
 	system(paste("bedtools intersect -a ~/Analyze4C/temp/FPKM2_afterCO.bed -b ~/Analyze4C/contact_bands/",conts_filename," -wo > ~/Analyze4C/temp/expressionComparison2.bed",sep=""))
-	expressionComparison1 <- read.table("~/Analyze4C/temp/expressionComparison1.bed")	
-	expressionComparison2 <- read.table("~/Analyze4C/temp/expressionComparison2.bed")
+	if(file.info("~/Analyze4C/temp/expressionComparison1.bed")$size != 0)
+	{
+		expressionComparison1 <- read.table("~/Analyze4C/temp/expressionComparison1.bed")
+	}
+	else
+	{
+		expressionComparison1 <- data.frame(0,0,0,0,0,0,0,0)
+	}
 
+	if(file.info("~/Analyze4C/temp/expressionComparison2.bed")$size != 0)
+	{
+		expressionComparison2 <- read.table("~/Analyze4C/temp/expressionComparison2.bed")
+	}
+	else
+	{
+		expressionComparison2 <- data.frame(0,0,0,0,0,0,0,0)
+	}
+				
 	#getting the date and time in order to distinguish between file names of plots
 	DandT1 <- toString(Sys.time())
 	DandT2 <- gsub(" ","_",DandT1)
@@ -892,16 +907,50 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 				{
 					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM1_afterCO.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_A1.bed",sep=""))
 					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM2_afterCO.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_A2.bed",sep=""))
-					venn_A1 <- read.table(paste("~/Analyze4C/temp/venn_A1.bed",sep=""))
-					venn_A2 <- read.table(paste("~/Analyze4C/temp/venn_A2.bed",sep=""))
+
+					if(file.info(paste("~/Analyze4C/temp/venn_A1.bed",sep=""))$size != 0)
+					{
+						venn_A1 <- read.table(paste("~/Analyze4C/temp/venn_A1.bed",sep=""))
+					}
+					else
+					{
+						venn_A1 <- data.frame(0,0,0,0,0)
+					}
+
+					if(file.info(paste("~/Analyze4C/temp/venn_A2.bed",sep=""))$size != 0)
+					{
+						venn_A2 <- read.table(paste("~/Analyze4C/temp/venn_A2.bed",sep=""))
+					}
+					else
+					{
+						venn_A2 <- data.frame(0,0,0,0,0)
+					}
+
 					system("rm ~/Analyze4C/temp/venn_A1.bed")
 					system("rm ~/Analyze4C/temp/venn_A2.bed")
 					if(venn_ans2 == "y")
 					{
 						system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM1_afterCO.bed -c > ~/Analyze4C/temp/venn_B1.bed",sep=""))
 						system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM2_afterCO.bed -c > ~/Analyze4C/temp/venn_B2.bed",sep=""))
-						venn_B1 <- read.table(paste("~/Analyze4C/temp/venn_B1.bed",sep=""))
-						venn_B2 <- read.table(paste("~/Analyze4C/temp/venn_B2.bed",sep=""))
+
+						if(file.info(paste("~/Analyze4C/temp/venn_B1.bed",sep=""))$size != 0)
+						{
+							venn_B1 <- read.table(paste("~/Analyze4C/temp/venn_B1.bed",sep=""))
+						}
+						else
+						{
+							venn_B1 <- data.frame(0,0,0,0,0)
+						}
+
+						if(file.info(paste("~/Analyze4C/temp/venn_B2.bed",sep=""))$size != 0)
+						{
+							venn_B2 <- read.table(paste("~/Analyze4C/temp/venn_B2.bed",sep=""))
+						}
+						else
+						{
+							venn_B2 <- data.frame(0,0,0,0,0)
+						}
+
 						#removing files
 						system("rm ~/Analyze4C/temp/venn_B1.bed")
 						system("rm ~/Analyze4C/temp/venn_B2.bed")
@@ -917,8 +966,25 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 				{
 					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM1_afterCO.bed -c > ~/Analyze4C/temp/venn1.bed",sep=""))
 					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM2_afterCO.bed -c > ~/Analyze4C/temp/venn2.bed",sep=""))
-					venn1 <- read.table(paste("~/Analyze4C/temp/venn1.bed",sep=""))
-					venn2 <- read.table(paste("~/Analyze4C/temp/venn2.bed",sep=""))
+
+					if(file.info(paste("~/Analyze4C/temp/venn1.bed",sep=""))$size != 0)
+					{
+						venn1 <- read.table(paste("~/Analyze4C/temp/venn1.bed",sep=""))
+					}
+					else
+					{
+						venn1 <- data.frame(0,0,0,0,0)
+					}
+
+					if(file.info(paste("~/Analyze4C/temp/venn2.bed",sep=""))$size != 0)
+					{
+						venn2 <- read.table(paste("~/Analyze4C/temp/venn2.bed",sep=""))
+					}
+					else
+					{
+						venn2 <- data.frame(0,0,0,0,0)
+					}
+
 					system("rm ~/Analyze4C/temp/venn1.bed")
 					system("rm ~/Analyze4C/temp/venn2.bed")
 					#add the correct number to each column
@@ -1445,16 +1511,50 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 				{
 					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM1_afterCO.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_A1.bed",sep=""))
 					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM2_afterCO.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_A2.bed",sep=""))
-					venn_A1 <- read.table(paste("~/Analyze4C/temp/venn_A1.bed",sep=""))
-					venn_A2 <- read.table(paste("~/Analyze4C/temp/venn_A2.bed",sep=""))
+
+					if(file.info(paste("~/Analyze4C/temp/venn_A1.bed",sep=""))$size != 0)
+					{
+						venn_A1 <- read.table(paste("~/Analyze4C/temp/venn_A1.bed",sep=""))
+					}
+					else
+					{
+						venn_A1 <- data.frame(0,0,0,0,0)
+					}
+
+					if(file.info(paste("~/Analyze4C/temp/venn_A2.bed",sep=""))$size != 0)
+					{
+						venn_A2 <- read.table(paste("~/Analyze4C/temp/venn_A2.bed",sep=""))
+					}
+					else
+					{
+						venn_A2 <- data.frame(0,0,0,0,0)
+					}
+					
 					system("rm ~/Analyze4C/temp/venn_A1.bed")
 					system("rm ~/Analyze4C/temp/venn_A2.bed")
 					if(venn_ans2 == "y")
 					{
 						system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM1_afterCO.bed -c > ~/Analyze4C/temp/venn_B1.bed",sep=""))
 						system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM2_afterCO.bed -c > ~/Analyze4C/temp/venn_B2.bed",sep=""))
-						venn_B1 <- read.table(paste("~/Analyze4C/temp/venn_B1.bed",sep=""))
-						venn_B2 <- read.table(paste("~/Analyze4C/temp/venn_B2.bed",sep=""))
+
+						if(file.info(paste("~/Analyze4C/temp/venn_B1.bed",sep=""))$size != 0)
+						{
+							venn_B1 <- read.table(paste("~/Analyze4C/temp/venn_B1.bed",sep=""))
+						}
+						else
+						{
+							venn_B1 <- data.frame(0,0,0,0,0)
+						}
+
+						if(file.info(paste("~/Analyze4C/temp/venn_B2.bed",sep=""))$size != 0)
+						{
+							venn_B2 <- read.table(paste("~/Analyze4C/temp/venn_B2.bed",sep=""))
+						}
+						else
+						{
+							venn_B2 <- data.frame(0,0,0,0,0)
+						}
+
 						#removing files
 						system("rm ~/Analyze4C/temp/venn_B1.bed")
 						system("rm ~/Analyze4C/temp/venn_B2.bed")
@@ -1470,8 +1570,25 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 				{
 					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM1_afterCO.bed -c > ~/Analyze4C/temp/venn1.bed",sep=""))
 					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM2_afterCO.bed -c > ~/Analyze4C/temp/venn2.bed",sep=""))
-					venn1 <- read.table(paste("~/Analyze4C/temp/venn1.bed",sep=""))
-					venn2 <- read.table(paste("~/Analyze4C/temp/venn2.bed",sep=""))
+
+					if(file.info(paste("~/Analyze4C/temp/venn1.bed",sep=""))$size != 0)
+					{
+						venn1 <- read.table(paste("~/Analyze4C/temp/venn1.bed",sep=""))
+					}
+					else
+					{
+						venn1 <- data.frame(0,0,0,0,0)
+					}
+
+					if(file.info(paste("~/Analyze4C/temp/venn2.bed",sep=""))$size != 0)
+					{
+						venn2 <- read.table(paste("~/Analyze4C/temp/venn2.bed",sep=""))
+					}
+					else
+					{
+						venn2 <- data.frame(0,0,0,0,0)
+					}
+
 					system("rm ~/Analyze4C/temp/venn1.bed")
 					system("rm ~/Analyze4C/temp/venn2.bed")
 					#add the correct number to each column
@@ -2096,16 +2213,50 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 				{
 					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM1_afterCO.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_A1.bed",sep=""))
 					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM2_afterCO.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_A2.bed",sep=""))
-					venn_A1 <- read.table(paste("~/Analyze4C/temp/venn_A1.bed",sep=""))
-					venn_A2 <- read.table(paste("~/Analyze4C/temp/venn_A2.bed",sep=""))
+
+					if(file.info(paste("~/Analyze4C/temp/venn_A1.bed",sep=""))$size != 0)
+					{
+						venn_A1 <- read.table(paste("~/Analyze4C/temp/venn_A1.bed",sep=""))
+					}
+					else
+					{
+						venn_A1 <- data.frame(0,0,0,0,0)
+					}
+
+					if(file.info(paste("~/Analyze4C/temp/venn_A2.bed",sep=""))$size != 0)
+					{
+						venn_A2 <- read.table(paste("~/Analyze4C/temp/venn_A2.bed",sep=""))
+					}
+					else
+					{
+						venn_A2 <- data.frame(0,0,0,0,0)
+					}
+
 					system("rm ~/Analyze4C/temp/venn_A1.bed")
 					system("rm ~/Analyze4C/temp/venn_A2.bed")
 					if(venn_ans2 == "y")
 					{
 						system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM1_afterCO.bed -c > ~/Analyze4C/temp/venn_B1.bed",sep=""))
 						system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM2_afterCO.bed -c > ~/Analyze4C/temp/venn_B2.bed",sep=""))
-						venn_B1 <- read.table(paste("~/Analyze4C/temp/venn_B1.bed",sep=""))
-						venn_B2 <- read.table(paste("~/Analyze4C/temp/venn_B2.bed",sep=""))
+
+						if(file.info(paste("~/Analyze4C/temp/venn_B1.bed",sep=""))$size != 0)
+						{
+							venn_B1 <- read.table(paste("~/Analyze4C/temp/venn_B1.bed",sep=""))
+						}
+						else
+						{
+							venn_B1 <- data.frame(0,0,0,0,0)
+						}
+
+						if(file.info(paste("~/Analyze4C/temp/venn_B2.bed",sep=""))$size != 0)
+						{
+							venn_B2 <- read.table(paste("~/Analyze4C/temp/venn_B2.bed",sep=""))
+						}
+						else
+						{
+							venn_B2 <- data.frame(0,0,0,0,0)
+						}
+
 						#removing files
 						system("rm ~/Analyze4C/temp/venn_B1.bed")
 						system("rm ~/Analyze4C/temp/venn_B2.bed")
@@ -2127,8 +2278,25 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 				{
 					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM1_afterCO.bed -c > ~/Analyze4C/temp/venn1.bed",sep=""))
 					system(paste("bedtools intersect -a ~/Analyze4C/contact_bands/",conts_filename," -b ~/Analyze4C/temp/FPKM2_afterCO.bed -c > ~/Analyze4C/temp/venn2.bed",sep=""))
-					venn1 <- read.table(paste("~/Analyze4C/temp/venn1.bed",sep=""))
-					venn2 <- read.table(paste("~/Analyze4C/temp/venn2.bed",sep=""))
+
+					if(file.info(paste("~/Analyze4C/temp/venn1.bed",sep=""))$size != 0)
+					{
+						venn1 <- read.table(paste("~/Analyze4C/temp/venn1.bed",sep=""))
+					}
+					else
+					{
+						venn1 <- data.frame(0,0,0,0,0)
+					}
+
+					if(file.info(paste("~/Analyze4C/temp/venn2.bed",sep=""))$size != 0)
+					{
+						venn2 <- read.table(paste("~/Analyze4C/temp/venn2.bed",sep=""))
+					}
+					else
+					{
+						venn2 <- data.frame(0,0,0,0,0)
+					}
+
 					system("rm ~/Analyze4C/temp/venn1.bed")
 					system("rm ~/Analyze4C/temp/venn2.bed")
 					#add the correct number to each column and create venn diagram using the data frame venn_DF

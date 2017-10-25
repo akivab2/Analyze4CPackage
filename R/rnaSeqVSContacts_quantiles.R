@@ -763,11 +763,25 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 				if(venn_ans1 == "y") 
 				{ 
 					system(paste("bedtools intersect -a ~/Analyze4C/temp/FPKM_",m,"per.bed -b ~/Analyze4C/temp/ps_conts_",m,"per.bed -f ",ovlp_cov," -c > ~/Analyze4C/temp/venn_",m,"per_A.bed",sep="")) 
-					venn_A <- read.table(paste("~/Analyze4C/temp/venn_",m,"per_A.bed",sep="")) 
+					if(file.info(paste("~/Analyze4C/temp/venn_",m,"per_A.bed",sep=""))$size != 0)
+					{
+						venn_A <- read.table(paste("~/Analyze4C/temp/venn_",m,"per_A.bed",sep=""))
+					}
+					else
+					{
+						venn_A <- data.frame(0,0,0,0,0,0)
+					}
 					if(venn_ans2 == "y") 
 					{ 
 						system(paste("bedtools intersect -a ~/Analyze4C/temp/FPKM_",m,"per.bed -b ~/Analyze4C/temp/ps_conts_",m,"per.bed -c > ~/Analyze4C/temp/venn_",m,"per_B.bed",sep="")) 
-						venn_B <- read.table(paste("~/Analyze4C/temp/venn_",m,"per_B.bed",sep="")) 
+						if(file.info(paste("~/Analyze4C/temp/venn_",m,"per_B.bed",sep=""))$size != 0)
+						{
+							venn_B <- read.table(paste("~/Analyze4C/temp/venn_",m,"per_B.bed",sep="")) 
+						}
+						else
+						{
+							venn_B <- data.frame(0,0,0,0,0,0)
+						}
 						#if the number in the 1st is 0 but the number in the 2nd is more than ovlp_num then we will consider it to be 1 
 						venn_A[venn_B[,5]>=ovlp_num,5] <- 1 
 					} 
@@ -780,7 +794,14 @@ rnaSeqVSContacts_quantiles <- function(Experiments_4C,expressionVScontacts_sumOF
 				else 
 				{ 
 					system(paste("bedtools intersect -a ~/Analyze4C/temp/FPKM_",m,"per.bed -b ~/Analyze4C/temp/ps_conts_",m,"per.bed -c > ~/Analyze4C/temp/venn_",m,"per.bed",sep="")) 
-					venn <- read.table(paste("~/Analyze4C/temp/venn_",m,"per.bed",sep="")) 
+					if(file.info(paste("~/Analyze4C/temp/venn_",m,"per.bed",sep=""))$size != 0)
+					{
+						venn <- read.table(paste("~/Analyze4C/temp/venn_",m,"per.bed",sep="")) 
+					}
+					else
+					{
+						venn <- data.frame(0,0,0,0,0,0)
+					}
 					#venn_DF[[ind_count]][[venn_col_num]] <- as.character(paste(venn[venn[,5] == 1,1:3][,1],venn[venn[,5] == 1,1:3][,2],venn[venn[,5] == 1,1:3][,3])) 			
 					#add the correct number to venn_col_num rows 
 					venn_DF[[ind_count]][venn[,5]>=1,venn_col_num] <- 1 	

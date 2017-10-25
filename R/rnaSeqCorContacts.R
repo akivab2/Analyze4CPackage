@@ -812,10 +812,28 @@ rnaSeqCorContacts <- function(Experiments_4C,rearranged_rawData,expressionVScont
 		if(choice4 == 1) #if by individual
 		{
 			system("bedtools intersect -a ~/Analyze4C/temp/ps_bed_afterCO.bed -b ~/Analyze4C/temp/FPKM.bed -wo > ~/Analyze4C/temp/intersected.bed")			
+
+			#if there were no intersections	(i think this is the best way to deal with a case like this)
+			if(file.info("~/Analyze4C/temp/intersected.bed")$size == 0)
+			{
+				cat("\nthere were no intersections between the p-scores and FPKM data\n\n")
+				return()
+			}
+			
+			#if there were intersections:
 			intersected <- read.table("~/Analyze4C/temp/intersected.bed")	
 			intersected_pairs <- as.data.frame(cbind(intersected[,4],intersected[,8]))
 			
 			system("bedtools intersect -a ~/Analyze4C/temp/reads_bed.bed -b ~/Analyze4C/temp/FPKM.bed -wo > ~/Analyze4C/temp/intersected_reads.bed")
+
+			#if there were no intersections	(i think this is the best way to deal with a case like this)
+			if(file.info("~/Analyze4C/temp/intersected_reads.bed")$size == 0)
+			{
+				cat("\nthere were no intersections between the reads and FPKM data\n\n")
+				return()
+			}
+			
+			#if there were intersections:
 			intersected_reads <- read.table("~/Analyze4C/temp/intersected_reads.bed")	
 			intersected_reads_pairs <- as.data.frame(cbind(intersected_reads[,4],intersected_reads[,8]))			
 		}	

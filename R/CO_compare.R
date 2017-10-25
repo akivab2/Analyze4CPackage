@@ -600,7 +600,16 @@ CO_compare <- function(Experiments_4C,coIntersections_plots,rearranged_rawData)
 			}
 			else
 			{
-				all <- read.delim(paste("~/Analyze4C/temp/ints_",i,"CO_",j,"CO_all.bed",sep=""),header=FALSE,quote="",stringsAsFactors=FALSE)
+				# i added this condition later, i think its the right thing to do but not sure
+				if(file.info(paste("~/Analyze4C/temp/ints_",i,"CO_",j,"CO_all.bed",sep=""))$size != 0)
+				{
+					all <- read.delim(paste("~/Analyze4C/temp/ints_",i,"CO_",j,"CO_all.bed",sep=""),header=FALSE,quote="",stringsAsFactors=FALSE)
+				}
+				else
+				{
+					all <- data.frame(0,0,0,0,0,0,0,0)
+				}
+
 				sum_all <- sum(all[,7])
 			}			
 			sum_ints_all$COs1[ind] <- i
@@ -648,7 +657,16 @@ CO_compare <- function(Experiments_4C,coIntersections_plots,rearranged_rawData)
 			}
 			else
 			{
-				trans <- read.delim(paste("~/Analyze4C/temp/ints_",i,"CO_",j,"CO_trans.bed",sep=""),header=FALSE,quote="",stringsAsFactors=FALSE)
+				# i added this condition later, i think its the right thing to do but not sure			
+				if(file.info(paste("~/Analyze4C/temp/ints_",i,"CO_",j,"CO_trans.bed",sep=""))$size != 0)
+				{
+					trans <- read.delim(paste("~/Analyze4C/temp/ints_",i,"CO_",j,"CO_trans.bed",sep=""),header=FALSE,quote="",stringsAsFactors=FALSE)
+				}
+				else
+				{
+					trans <- data.frame(0,0,0,0,0,0,0,0)
+				}
+
 				sum_trans <- sum(trans[,7])
 			}			
 			sum_ints_trans$COs1[ind] <- i
@@ -699,7 +717,16 @@ CO_compare <- function(Experiments_4C,coIntersections_plots,rearranged_rawData)
 				}
 				else
 				{
-					chroms[[m]] <- read.delim(paste("~/Analyze4C/temp/ints_",i,"CO_",j,"CO_",m,".bed",sep=""),header=FALSE,quote="",stringsAsFactors=FALSE)
+					# i added this condition later, i think its the right thing to do but not sure			
+					if(file.info(paste("~/Analyze4C/temp/ints_",i,"CO_",j,"CO_",m,".bed",sep=""))$size != 0)
+					{
+						chroms[[m]] <- read.delim(paste("~/Analyze4C/temp/ints_",i,"CO_",j,"CO_",m,".bed",sep=""),header=FALSE,quote="",stringsAsFactors=FALSE)
+					}
+					else
+					{
+						chroms[[m]] <- data.frame(0,0,0,0,0,0,0,0)
+					}
+
 					sum_chroms[m] <- sum(chroms[[m]][,7])
 				}	
 				sum_ints_chroms[[m]]$COs1[ind] <- i
