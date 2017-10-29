@@ -1637,7 +1637,7 @@ tissue_ChIPseq_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 					venn_DF[venn1[,4]>=1 & venn1[,1]!=cis,2] <- 1
 					venn_DF[venn2[,4]>=1 & venn2[,1]!=cis,3] <- 1				
 				}
-				browser()
+
 				# create venn diagram using the data frame venn_DF
 				venn_flag <- 0 #if venn_flag is 1 then we save a diagram and it should be recorded in 'ChIPseqVScontacts_plots'
 				vennName <- paste("venn_psContsVS2peaks_",DandT2,".jpg",sep="")
