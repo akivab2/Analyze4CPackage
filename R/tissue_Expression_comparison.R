@@ -97,29 +97,39 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 			}
 		}
 		
-		repeat
+		add_file = readline(prompt=cat("\nshould the second file just be the non-expressed genes of the same file?\ny/n\n"))
+		if(add_file == "y")
 		{
-			FPKM_filename2 <- readline(prompt=cat("\nchoose the second FPKM file that you would like to use:\n",ls_FPKM[ls_FPKM != FPKM_filename1],"",sep="\n"))
-			ind_files3 <- pmatch(FPKM_filename2,ls_FPKM[ls_FPKM != FPKM_filename1],nomatch=0)
-			if(ind_files3 == 0)
-			{
-				cat("no such file exists.\nplease try again.\n\n")
-			}
-			else
-			{
-				FPKM2 <- read.table(paste("~/Analyze4C/RNAseq/FPKM/",FPKM_filename2,sep=""))
-				break
-			}
+			FPKM2 <- read.table(paste("~/Analyze4C/RNAseq/FPKM/",FPKM_filename1,sep=""))
+			FPKM2 <- FPKM2[FPKM2[,4]==0,]
+			FPKM_filename2 <- paste(unlist(strsplit("SRR505743_2017-04-06_155732_FPKM.bed",".bed")),"_nonExpressed.bed",sep="")
 		}
-		
-		#asking if to not use all the FPKMs that are 0, this is important because when getting the quantiles it considers the 0 examples as well
-		#and since FPKMs of 0 could be considered as if there is no expression at all in those areas, then we might be able to remove them
-		#the user decided
-		remZeroFPKM <- readline(prompt=cat("\nshould FPKM's of 0 be removed?\ny/n\n\n"))
-		if(remZeroFPKM == "y") #removing all FPKMs that are 0 (since they are basically rna-seq reads that don't exist)
+		else
 		{
-			FPKM1 <- FPKM1[FPKM1[,4]>0,]
-			FPKM2 <- FPKM2[FPKM2[,4]>0,]
+			repeat
+			{
+				FPKM_filename2 <- readline(prompt=cat("\nchoose the second FPKM file that you would like to use:\n",ls_FPKM[ls_FPKM != FPKM_filename1],"",sep="\n"))
+				ind_files3 <- pmatch(FPKM_filename2,ls_FPKM[ls_FPKM != FPKM_filename1],nomatch=0)
+				if(ind_files3 == 0)
+				{
+					cat("no such file exists.\nplease try again.\n\n")
+				}
+				else
+				{
+					FPKM2 <- read.table(paste("~/Analyze4C/RNAseq/FPKM/",FPKM_filename2,sep=""))
+					break
+				}
+			}
+			
+			#asking if to not use all the FPKMs that are 0, this is important because when getting the quantiles it considers the 0 examples as well
+			#and since FPKMs of 0 could be considered as if there is no expression at all in those areas, then we might be able to remove them
+			#the user decides
+			remZeroFPKM <- readline(prompt=cat("\nshould FPKM's of 0 be removed?\ny/n\n\n"))
+			if(remZeroFPKM == "y") #removing all FPKMs that are 0 (since they are basically rna-seq reads that don't exist)
+			{
+				FPKM1 <- FPKM1[FPKM1[,4]>0,]
+				FPKM2 <- FPKM2[FPKM2[,4]>0,]
+			}		
 		}		
 	}
 	else
