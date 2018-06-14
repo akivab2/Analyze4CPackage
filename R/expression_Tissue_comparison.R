@@ -1016,12 +1016,39 @@ expression_Tissue_comparison <- function(Experiments_4C,expressionVScontacts_plo
 		}
 		else if(ans3 == 2) #trans
 		{
+			trans_test <- 1
+			ans.trans <- "n"
 			#if the cis chromosomes of the contact bands chosen don't match, we can't remove both cis chromosomes from the FPKM file, so trans can't be done
 			if(cis[1]!=cis[2])
 			{
-				cat("\the cis chromosomes of both contact bands files chosen are different\na the intersections of only trans in this case cannot be done\nin order to do so, you must choose two contact bands with the same cis chromosome\n\n")
+				cat("\nthe cis chromosomes of both contact bands files chosen are different\na the intersections of only trans in this case cannot be done\nin order to do so, you must choose two contact bands with the same cis chromosome\n\n")
+				ans.trans <- readline("\nwould you like to test it on the common trans chromosomes of both baits?\ny/n\n\n")
+				if(ans.trans == "y")
+				{
+					FPKM_afterCO_original <- FPKM_afterCO
+					conts_original <- conts
+					expressionComparison1_original <- expressionComparison1
+					expressionComparison2_original <- expressionComparison2
+								
+					#removing both cis chromosomes from the data					
+					FPKM_afterCO[[1]] <- FPKM_afterCO[[1]][FPKM_afterCO[[1]][,1]!=cis[1] & FPKM_afterCO[[1]][,1]!=cis[2],]
+					FPKM_afterCO[[2]] <- FPKM_afterCO[[2]][FPKM_afterCO[[2]][,1]!=cis[1] & FPKM_afterCO[[2]][,1]!=cis[2],]
+
+					conts[[1]] <- conts[[1]][conts[[1]][,1]!=cis[1] & conts[[1]][,1]!=cis[2],]
+					conts[[2]] <- conts[[2]][conts[[2]][,1]!=cis[1] & conts[[2]][,1]!=cis[2],]
+					
+					expressionComparison1 <- expressionComparison1[expressionComparison1[,1]!=cis[1] & expressionComparison1[,1]!=cis[2],]
+					expressionComparison2 <- expressionComparison2[expressionComparison2[,1]!=cis[1] & expressionComparison2[,1]!=cis[2],]
+					
+					cat("\nthe chromosomes that are not included are",cis[1],"and",cis[2],"\n")
+				}
+				else
+				{
+					trans_test <- 0
+				}
 			}
-			else
+			
+			if(trans_test == 1)
 			{
 				#the mcnemar test
 				#since we have two different 'FPKM_afterCO' bed files (one for each removal of sections according to each contact bands file separately) we will perform the mcnemar test twice
@@ -1559,8 +1586,19 @@ expression_Tissue_comparison <- function(Experiments_4C,expressionVScontacts_plo
 						venn_A2[venn_B2[,5]>=ovlp_num,5] <- 1
 					}
 					#add the correct number to each column
-					venn_DF[venn_A1[,5]>=1 & venn_A1[,1]!=cis[1],2] <- 1
-					venn_DF[venn_A2[,5]>=1 & venn_A2[,1]!=cis[2],3] <- 1
+					#add the correct number to each column
+					if(ans.trans == "y")
+					{
+						vennA1_tmp <- vennA1[vennA1[,1]!=cis[1] & vennA1[,1]!=cis[2],]
+						vennA2_tmp <- vennA2[vennA1[,1]!=cis[1] & vennA2[,1]!=cis[2],]
+						venn_DF[vennA1_tmp[,5]>=1,2] <- 1
+						venn_DF[vennA2_tmp[,5]>=1,3] <- 1
+					}
+					else
+					{	
+						venn_DF[venn_A1[,5]>=1 & venn_A1[,1]!=cis[1],2] <- 1
+						venn_DF[venn_A2[,5]>=1 & venn_A2[,1]!=cis[2],3] <- 1
+					}					
 				}
 				else
 				{	
@@ -1584,12 +1622,23 @@ expression_Tissue_comparison <- function(Experiments_4C,expressionVScontacts_plo
 					{
 						venn2 <- data.frame(0,0,0,0,0)
 					}
-
+					browser()
 					system("rm ~/Analyze4C/temp/venn1.bed")
 					system("rm ~/Analyze4C/temp/venn2.bed")
+					
 					#add the correct number to each column
-					venn_DF[venn1[,5]>=1 & venn1[,1]!=cis[1],2] <- 1
-					venn_DF[venn2[,5]>=1 & venn2[,1]!=cis[2],3] <- 1					
+					if(ans.trans == "y")
+					{
+						venn1_tmp <- venn1[venn1[,1]!=cis[1] & venn1[,1]!=cis[2],]
+						venn2_tmp <- venn2[venn1[,1]!=cis[1] & venn2[,1]!=cis[2],]
+						venn_DF[venn1_tmp[,5]>=1,2] <- 1
+						venn_DF[venn2_tmp[,5]>=1,3] <- 1
+					}
+					else
+					{	
+						venn_DF[venn1[,5]>=1 & venn1[,1]!=cis[1],2] <- 1
+						venn_DF[venn2[,5]>=1 & venn2[,1]!=cis[2],3] <- 1
+					}	
 				}
 				
 				# create venn diagram using the data frame venn_DF
@@ -1638,6 +1687,14 @@ expression_Tissue_comparison <- function(Experiments_4C,expressionVScontacts_plo
 					system("rm expressionVScontacts_plots.txt")
 					write.table(expressionVScontacts_plots,"expressionVScontacts_plots.txt",sep="\t",row.names = FALSE,col.names = TRUE,quote=FALSE)			
 				}	
+			}			
+
+			if(ans.trans == "y")
+			{
+				FPKM_afterCO <- FPKM_afterCO_original
+				conts <- conts_original
+				expressionComparison1 <- expressionComparison1_original
+				expressionComparison2 <- expressionComparison2_original
 			}			
 		}	
 		else if(ans3 == 3) #chromosomes separately
