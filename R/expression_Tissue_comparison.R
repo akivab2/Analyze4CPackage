@@ -1622,7 +1622,6 @@ expression_Tissue_comparison <- function(Experiments_4C,expressionVScontacts_plo
 					{
 						venn2 <- data.frame(0,0,0,0,0)
 					}
-					browser()
 					system("rm ~/Analyze4C/temp/venn1.bed")
 					system("rm ~/Analyze4C/temp/venn2.bed")
 					
