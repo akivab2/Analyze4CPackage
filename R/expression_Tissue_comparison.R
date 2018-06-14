@@ -103,14 +103,23 @@ expression_Tissue_comparison <- function(Experiments_4C,expressionVScontacts_plo
 			}
 		}
 
-		#asking if to not use all the FPKMs that are 0, this is important because when getting the quantiles it considers the 0 examples as well
-		#and since FPKMs of 0 could be considered as if there is no expression at all in those areas, then we might be able to remove them
-		#the user decided
-		remZeroFPKM <- readline(prompt=cat("\nshould FPKM's of 0 be removed?\ny/n\n\n"))
-		if(remZeroFPKM == "y") #removing all FPKMs that are 0 (since they are basically rna-seq reads that don't exist)
+		#asking if to use only the genes that aren't expressed (those with an FPKM of 0)
+		onlyZeroFPKM <- readline(prompt=cat("\nshould we use only the genes that were not expressed at all (FPKM of 0)?\ny/n\n\n"))
+		if(onlyZeroFPKM == "y")
 		{
-			FPKM <- FPKM[FPKM[,4]>0,]
-		}			
+			FPKM <- FPKM[FPKM[,4]==0,]
+		}
+		else #if we use all the genes
+		{
+			#asking if to not use all the FPKMs that are 0, this is important because when getting the quantiles it considers the 0 examples as well
+			#and since FPKMs of 0 could be considered as if there is no expression at all in those areas, then we might be able to remove them
+			#the user decided
+			remZeroFPKM <- readline(prompt=cat("\nshould FPKM's of 0 be removed?\ny/n\n\n"))
+			if(remZeroFPKM == "y") #removing all FPKMs that are 0 (since they are basically rna-seq reads that don't exist)
+			{
+				FPKM <- FPKM[FPKM[,4]>0,]
+			}
+		}	
 	}
 	else
 	{
