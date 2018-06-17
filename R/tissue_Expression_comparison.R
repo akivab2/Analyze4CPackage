@@ -102,7 +102,7 @@ tissue_Expression_comparison <- function(Experiments_4C,expressionVScontacts_plo
 		{
 			FPKM2 <- read.table(paste("~/Analyze4C/RNAseq/FPKM/",FPKM_filename1,sep=""))
 			FPKM2 <- FPKM2[FPKM2[,4]==0,]
-			FPKM_filename2 <- paste(unlist(strsplit("SRR505743_2017-04-06_155732_FPKM.bed",".bed")),"_nonExpressed.bed",sep="")
+			FPKM_filename2 <- paste(unlist(strsplit(FPKM1,".bed")),"_nonExpressed.bed",sep="")
 
 			#asking if to not use all the FPKMs that are 0, this is important because when getting the quantiles it considers the 0 examples as well
 			#and since FPKMs of 0 could be considered as if there is no expression at all in those areas, then we might be able to remove them
