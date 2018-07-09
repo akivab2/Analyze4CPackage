@@ -1021,7 +1021,7 @@ expression_Tissue_comparison <- function(Experiments_4C,expressionVScontacts_plo
 			#if the cis chromosomes of the contact bands chosen don't match, we can't remove both cis chromosomes from the FPKM file, so trans can't be done
 			if(cis[1]!=cis[2])
 			{
-				cat("\nthe cis chromosomes of both contact bands files chosen are different\na the intersections of only trans in this case cannot be done\nin order to do so, you must choose two contact bands with the same cis chromosome\n\n")
+				cat("\nthe cis chromosomes of both contact bands files chosen are different\nthe intersections of only trans in this case cannot be done\nin order to do so, you must choose two contact bands with the same cis chromosome\n\n")
 				ans.trans <- readline("\nwould you like to test it on the common trans chromosomes of both baits?\ny/n\n\n")
 				if(ans.trans == "y")
 				{
@@ -1585,7 +1585,6 @@ expression_Tissue_comparison <- function(Experiments_4C,expressionVScontacts_plo
 						venn_A1[venn_B1[,5]>=ovlp_num,5] <- 1
 						venn_A2[venn_B2[,5]>=ovlp_num,5] <- 1
 					}
-					#add the correct number to each column
 					#add the correct number to each column
 					if(ans.trans == "y")
 					{

@@ -1028,12 +1028,39 @@ ChIPseq_Tissue_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 		}
 		else if(ans3 == 2) #trans
 		{
+			trans_test <- 1
+			ans.trans <- "n"		
 			#if the cis chromosomes of the contact bands chosen don't match, we can't remove both cis chromosomes from the peaks file, so trans can't be done
 			if(cis[1]!=cis[2])
 			{
-				cat("\the cis chromosomes of both contact bands files chosen are different\na the intersections of only trans in this case cannot be done\nin order to do so, you must choose two contact bands with the same cis chromosome\n\n")
+				cat("\nthe cis chromosomes of both contact bands files chosen are different\nthe intersections of only trans in this case cannot be done\nin order to do so, you must choose two contact bands with the same cis chromosome\n\n")
+				ans.trans <- readline("\nwould you like to test it on the common trans chromosomes of both baits?\ny/n\n\n")
+				if(ans.trans == "y")
+				{
+					peaks_afterCO_original <- peaks_afterCO
+					conts_original <- conts
+					ChIPseqComparison1_original <- ChIPseqComparison1
+					ChIPseqComparison2_original <- ChIPseqComparison2
+								
+					#removing both cis chromosomes from the data					
+					peaks_afterCO[[1]] <- peaks_afterCO[[1]][peaks_afterCO[[1]][,1]!=cis[1] & peaks_afterCO[[1]][,1]!=cis[2],]
+					peaks_afterCO[[2]] <- peaks_afterCO[[2]][peaks_afterCO[[2]][,1]!=cis[1] & peaks_afterCO[[2]][,1]!=cis[2],]
+
+					conts[[1]] <- conts[[1]][conts[[1]][,1]!=cis[1] & conts[[1]][,1]!=cis[2],]
+					conts[[2]] <- conts[[2]][conts[[2]][,1]!=cis[1] & conts[[2]][,1]!=cis[2],]
+					
+					ChIPseqComparison1 <- ChIPseqComparison1[ChIPseqComparison1[,1]!=cis[1] & ChIPseqComparison1[,1]!=cis[2],]
+					ChIPseqComparison2 <- ChIPseqComparison2[ChIPseqComparison2[,1]!=cis[1] & ChIPseqComparison2[,1]!=cis[2],]
+					
+					cat("\nthe chromosomes that are not included are",cis[1],"and",cis[2],"\n")
+				}
+				else
+				{
+					trans_test <- 0
+				}
 			}
-			else
+			
+			if(trans_test == 1)
 			{
 				#the mcnemar test
 				#since we have two different 'peaks_afterCO' bed files (one for each removal of sections according to each contact bands file separately) we will perform the mcnemar test twice
@@ -1571,8 +1598,18 @@ ChIPseq_Tissue_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 						venn_A2[venn_B2[,5]>=ovlp_num,5] <- 1
 					}
 					#add the correct number to each column
-					venn_DF[venn_A1[,5]>=1 & venn_A1[,1]!=cis[1],2] <- 1
-					venn_DF[venn_A2[,5]>=1 & venn_A2[,1]!=cis[2],3] <- 1					
+					if(ans.trans == "y")
+					{
+						vennA1_tmp <- vennA1[vennA1[,1]!=cis[1] & vennA1[,1]!=cis[2],]
+						vennA2_tmp <- vennA2[vennA1[,1]!=cis[1] & vennA2[,1]!=cis[2],]
+						venn_DF[vennA1_tmp[,5]>=1,2] <- 1
+						venn_DF[vennA2_tmp[,5]>=1,3] <- 1
+					}
+					else
+					{	
+						venn_DF[venn_A1[,5]>=1 & venn_A1[,1]!=cis[1],2] <- 1
+						venn_DF[venn_A2[,5]>=1 & venn_A2[,1]!=cis[2],3] <- 1
+					}									
 				}
 				else
 				{
@@ -1599,9 +1636,20 @@ ChIPseq_Tissue_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 
 					system("rm ~/Analyze4C/temp/venn1.bed")
 					system("rm ~/Analyze4C/temp/venn2.bed")
+					
 					#add the correct number to each column
-					venn_DF[venn1[,5]>=1 & venn1[,1]!=cis[1],2] <- 1
-					venn_DF[venn2[,5]>=1 & venn2[,1]!=cis[2],3] <- 1					
+					if(ans.trans == "y")
+					{
+						venn1_tmp <- venn1[venn1[,1]!=cis[1] & venn1[,1]!=cis[2],]
+						venn2_tmp <- venn2[venn1[,1]!=cis[1] & venn2[,1]!=cis[2],]
+						venn_DF[venn1_tmp[,5]>=1,2] <- 1
+						venn_DF[venn2_tmp[,5]>=1,3] <- 1
+					}
+					else
+					{	
+						venn_DF[venn1[,5]>=1 & venn1[,1]!=cis[1],2] <- 1
+						venn_DF[venn2[,5]>=1 & venn2[,1]!=cis[2],3] <- 1
+					}	
 				}
 				
 				# create venn diagram using the data frame venn_DF
@@ -1650,6 +1698,14 @@ ChIPseq_Tissue_comparison <- function(Experiments_4C,ChIPseqVScontacts_plots,rea
 					system("rm ChIPseqVScontacts_plots.txt")
 					write.table(ChIPseqVScontacts_plots,"ChIPseqVScontacts_plots.txt",sep="\t",row.names = FALSE,col.names = TRUE,quote=FALSE)			
 				}	
+			}
+			
+			if(ans.trans == "y")
+			{
+				peaks_afterCO <- peaks_afterCO_original
+				conts <- conts_original
+				ChIPseqComparison1 <- ChIPseqComparison1_original
+				ChIPseqComparison2 <- ChIPseqComparison2_original
 			}			
 		}	
 		else if(ans3 == 3) #chromosomes separately
